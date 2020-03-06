@@ -87,6 +87,7 @@ async function playHighLow(words){
 
 //discord stuff
 ///////////////////////////////discord stuff
+const fs = require('fs');
 const Discord = require('discord.js');
 prefix="$";
 
@@ -94,6 +95,16 @@ const commands = ["coinflip", "highlow <low/high> <bet>", "help","scam","balance
 const client = new Discord.Client();
 
 const queue = new Map();
+
+client.commands = new Discord.Collection();
+
+const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
+
+for (const file of commandFiles) {
+	const command = require(`./commands/${file}`);
+	client.commands.set(command.name, command);
+}
+
 
 client.once('ready', () => {
     console.log('Ready!');
@@ -116,7 +127,7 @@ client.on('message', foo = async(msg) => {
     //riley sends a command
     //his id is  682032221347250200
     //my id is 163368896844267521
-    if (msg.member.id == 682032221347250200) {
+    if (msg.member.id == "682032221347250200") {
 
         if (msg.content.startsWith(`${prefix}`)) {
             msg.channel.send("<@" + msg.member.id + "> is from israel");
@@ -147,7 +158,7 @@ client.on('message', foo = async(msg) => {
 
         //check errors
         if (words.length<2 || !isNaN(words[0]) || isNaN(words[1])){
-            msg.channel.send("Error, please follow the syntax !highlow <low/high> <bet>")
+            msg.channel.send("Error, please follow the syntax $highlow <low/high> <bet>")
             return;
         }
         //get balance
