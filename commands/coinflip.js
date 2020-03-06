@@ -1,6 +1,6 @@
 module.exports = {
 	name: 'coinflip',
-	description: '$coinflip',
+	description: 'NOT GAMBLING flips head or tails',
 	execute(message, args) {
 		 if (Math.random() * 10 >= 5) {
             result = "heads"
@@ -8,6 +8,6 @@ module.exports = {
             result = "tails"
         }
 
-        msg.channel.send(result);
+        message.channel.send(result);
 	},
 };
