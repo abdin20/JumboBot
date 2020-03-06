@@ -1,6 +1,6 @@
 /////////////////////////////////mongo
 const {MongoClient} = require('mongodb');
-const uri = "mongodb+srv://jumbo:Jumborules123@cluster0-4fxsl.azure.mongodb.net/test?retryWrites=true&w=majority";
+const uri = process.env.MONGO_URI;
 const mongodClient = new MongoClient(uri, {useNewUrlParser: true, useUnifiedTopology: true});
 
 
