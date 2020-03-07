@@ -1,12 +1,14 @@
-var mongo = require("./mongodb.js");
-
 prefix = "$";
 var token =process.env.BOT_TOKEN;
 
+
 ///////////////////////////////discord stuff
 const fs = require('fs');
+var mongo = require("./mongodb.js");
 const Discord = require('discord.js');
 const client = new Discord.Client();
+
+var servers={};
 
 //getting commands
 client.commands = new Discord.Collection();
