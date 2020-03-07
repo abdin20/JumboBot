@@ -1,9 +1,6 @@
 
 const Discord = require('discord.js');
 var ffmpeg = require('ffmpeg');
-var connection;
-var dispatcher;
-
 var queue=[];
 
     
