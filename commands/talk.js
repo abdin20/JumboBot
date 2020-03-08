@@ -12,7 +12,7 @@ module.exports = {
         if (message.member.voice.channel) {
            await message.member.voice.channel.join()
            .then(foo = async (connection) => {
-               await connection.play("https://lithi.io/file/vw5C.mp3");
+               await connection.play("https://lithi.io/file/suMQ.mp3");
            });
         }else{
             message.reply("you need to be in a voice channel");
