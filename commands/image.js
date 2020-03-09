@@ -1,5 +1,5 @@
 const imageSearch = require('image-search-google');
-const imageClient = new imageSearch(process.env.CSI, process.env.GOOGLE.API);
+const imageClient = new imageSearch(process.env.CSI, process.env.GOOGLE_API);
  
 
 module.exports = {

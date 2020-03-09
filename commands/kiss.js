@@ -3,7 +3,7 @@ const fs = require('fs');
 const Discord = require('discord.js');
 
 const imageSearch = require('image-search-google');
-const imageClient = new imageSearch(process.env.CSI, process.env.GOOGLE.API);
+const imageClient = new imageSearch(process.env.CSI, process.env.GOOGLE_API);
 
 module.exports = {
     name: 'kiss',
