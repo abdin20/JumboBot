@@ -52,6 +52,9 @@ exports.findUserByAuthor =async function findUserByAuthor(author) {
          person.id = author.id;
          person.name = author.username;
          person.balance = 0;
+         person.playingBlackjack=false;
+         person.playerCards=[];
+         person.dealerCards=[];
         await this.createUser(person)
 
         result =  await mongodClient.db("userData").collection("money").findOne({id: author.id})
@@ -66,8 +69,7 @@ exports.findUserByAuthor =async function findUserByAuthor(author) {
 exports.updateBalanceById =async function updateBalanceById(id, propertyObject) {
     result = await mongodClient.db("userData").collection("money")
         .updateOne({ id: id }, { $set: propertyObject });
-
-
 }
+
 
 
