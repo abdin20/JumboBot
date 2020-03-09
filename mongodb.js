@@ -30,8 +30,6 @@ exports.createUser= async function createUser(newUser) {
          return null;
      }
 
-
-
 }
 
 //find user by their ID
@@ -52,10 +50,6 @@ exports.findUserByAuthor =async function findUserByAuthor(author) {
          person.id = author.id;
          person.name = author.username;
          person.balance = 0;
-         person.playingBlackjack=false;
-         person.playerCards=[];
-         person.dealerCards=[];
-         person.blackjackBet=0;
         await this.createUser(person)
 
         result =  await mongodClient.db("userData").collection("money").findOne({id: author.id})
@@ -72,5 +66,14 @@ exports.updateUserById =async function updateBalanceById(id, propertyObject) {
         .updateOne({ id: id }, { $set: propertyObject });
 }
 
+//find game from database based on type and discord id
+exports.findGameByType= async function findGameByType(id,channelId,type){
+        result = await mongodClient.db("userData").collection("games").findOne({id:id,channelId:channelId,type:type});
+        return result;
+}
 
-
+//create a new gambling game 
+exports.createGameByObject= async function createGameByType(gameObject){
+    const newGame = await mongodClient.db("userData").collection("games").insertOne(gameObject);
+    console.log("created " +gameObject.type + " game")
+}

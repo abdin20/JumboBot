@@ -23,17 +23,14 @@ module.exports = {
 			return;
 		}
 
-		//uncomment when ready to fully implement game
-		//check if playing game
-		// result=await mongo.findUserByAuthor(message.author)
-		// if (result.playingBlackjack) {
-		// 	message.reply("You're already playing a game!")
-		// 	return;
-		// }
-
-		//todo edit playingblackjack boolean
-		await mongo.updateUserById(message.author.id,{playingBlackjack:true})
-		///
+		// uncomment when ready to fully implement game
+		// check if playing game
+		result = await mongo.findGameByType(message.author.id, message.channel.id, "blackjack")
+		console.log(result)
+		if (result) {
+			message.reply("You're already in a game");
+			return;
+		}
 
 		//get balance
 		balance = await mongo.findBalanceById(message.author.id)
@@ -43,6 +40,8 @@ module.exports = {
 			return;
 		}
 
+		///////////////////////////////////////////game logic
+		//loop through the deal
 		for (m = 0; m < 2; m++) {
 			for (k = 0; k < 2; k++) {
 
@@ -71,9 +70,9 @@ module.exports = {
 
 					//make the message
 					playerMessage += value + " :" + suit + ": ";
-					
+
 					//dealing dealer cards only once
-				} else if(m==1 &&k==0) {
+				} else if (m == 1 && k == 0) {
 
 					//random cards
 					suit = suits[Math.floor(Math.random() * 4)]
@@ -103,6 +102,8 @@ module.exports = {
 
 			}
 		}
+		/////////////////////////////////////game logic
+		//set the blackjack game variables
 
 		msg = playerMessage + " Total: " + playerScore + "\n" + dealerMessage + " Total: " + dealerScore;
 
@@ -113,7 +114,20 @@ module.exports = {
 
 		//update the message last, then send it
 		exampleEmbed.setDescription(msg);
-		message.channel.send(exampleEmbed)
+		await message.channel.send(exampleEmbed).then(foo = async sent => {
+			//set the new game object
+			game = new Object();
+			game.id = message.author.id;
+			game.channelId = message.channel.id;
+			game.message = sent.id;
+			game.type = "blackjack";
+			game.playerCards = playerCards;
+			game.dealerCards = dealerCards;
+			game.playerScore = playerScore;
+			game.dealerScore = dealerScore;
+			await mongo.createGameByObject(game);
+			console.log("created and upload blackjack game")
+		});
 
 	},
 };
