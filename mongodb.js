@@ -55,6 +55,7 @@ exports.findUserByAuthor =async function findUserByAuthor(author) {
          person.playingBlackjack=false;
          person.playerCards=[];
          person.dealerCards=[];
+         person.blackjackBet=0;
         await this.createUser(person)
 
         result =  await mongodClient.db("userData").collection("money").findOne({id: author.id})
