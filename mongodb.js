@@ -66,7 +66,7 @@ exports.findUserByAuthor =async function findUserByAuthor(author) {
 }
 
 
-exports.updateBalanceById =async function updateBalanceById(id, propertyObject) {
+exports.updateUserById =async function updateBalanceById(id, propertyObject) {
     result = await mongodClient.db("userData").collection("money")
         .updateOne({ id: id }, { $set: propertyObject });
 }

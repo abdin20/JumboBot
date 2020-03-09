@@ -22,7 +22,7 @@ module.exports = {
  
          results= await this.playHighLow(args);
          balance=balance+results[1];
-         await mongo.updateBalanceById(message.author.id, {balance:balance})
+         await mongo.updateUserById(message.author.id, {balance:balance})
  
          if(results[0]=="win"){
              message.reply("Rolled "+`${results[2]}`+ "\nYou Won "+ `${results[1]}` +"\n Balance: " + `${balance}`)
