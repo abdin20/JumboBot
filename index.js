@@ -5,10 +5,14 @@ var token =process.env.BOT_TOKEN;
 ///////////////////////////////discord stuff
 const fs = require('fs');
 var mongo = require("./mongodb.js");
+
+//discord client
 const Discord = require('discord.js');
 const client = new Discord.Client();
 
-var servers={};
+
+//parser
+const parser  = require('discord-command-parser');
 
 //getting commands
 client.commands = new Discord.Collection();
@@ -38,14 +42,16 @@ client.on('message', foo = async (message) => {
     //if not prefix or bot talking ignore it
     if (!message.content.startsWith(prefix) || message.author.bot) return;
 
+    ///parse the message
+    const parsed = parser.parse(message, prefix);
     //will make a new one if person doesnt have account
     await mongo.findUserByAuthor(message.author);
 
     //args of command
-    const args = message.content.slice(prefix.length).split(' ');
+    const args = parsed.arguments
 
     //first arguement 
-    const command = args.shift().toLowerCase();
+    const command = parsed.command;
 
     //if cant find command return nothing;  
     if (!client.commands.has(command)) return;
