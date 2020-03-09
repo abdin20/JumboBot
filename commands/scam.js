@@ -22,7 +22,7 @@ module.exports = {
             gain=Math.floor(Math.random() * 1000);
             balance+=gain;
             //update db
-            await mongo.updateBalanceById(message.author.id, {balance:balance})
+            await mongo.updateUserById(message.author.id, {balance:balance})
             
             //get scam message
             msg=scams[Math.floor(Math.random() * (+scams.length ))]
