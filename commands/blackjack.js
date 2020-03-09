@@ -38,6 +38,9 @@ module.exports = {
 		if (balance < parseInt(args[0], 10)) {
 			message.channel.send("not enough shekels")
 			return;
+		}else{
+			//update balance with bet
+			await mongo.updateUserById(message.author.id,{balance:balance-args[0]})
 		}
 
 		///////////////////////////////////////////game logic
@@ -120,6 +123,7 @@ module.exports = {
 			game.id = message.author.id;
 			game.channelId = message.channel.id;
 			game.message = sent.id;
+			game.bet=args[0];
 			game.type = "blackjack";
 			game.playerCards = playerCards;
 			game.dealerCards = dealerCards;

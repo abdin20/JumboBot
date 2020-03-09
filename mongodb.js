@@ -61,7 +61,7 @@ exports.findUserByAuthor =async function findUserByAuthor(author) {
 }
 
 
-exports.updateUserById =async function updateBalanceById(id, propertyObject) {
+exports.updateUserById =async function updateUserById(id, propertyObject) {
     result = await mongodClient.db("userData").collection("money")
         .updateOne({ id: id }, { $set: propertyObject });
 }
@@ -76,4 +76,13 @@ exports.findGameByType= async function findGameByType(id,channelId,type){
 exports.createGameByObject= async function createGameByType(gameObject){
     const newGame = await mongodClient.db("userData").collection("games").insertOne(gameObject);
     console.log("created " +gameObject.type + " game")
+}
+
+//update gambling game
+exports.updateGameById= async function updateGameById(id,channelId,type,propertyObject){
+    
+    result = await mongodClient.db("userData").collection("games")
+        .updateOne({ id: id, channelId:channelId, type:type }, { $set: propertyObject });
+
+        console.log("updated " +gameObject.type + " game")
 }
