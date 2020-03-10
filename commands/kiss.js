@@ -18,8 +18,9 @@ module.exports = {
             return;
         }
 
+        var num=Math.floor( (Math.random()*4) + 1)
         //search google
-        imageClient.search("anime kissing gif", {page : Math.floor( (Math.random()*10) + 1)})
+        imageClient.search("anime kissing gif", {page : num })
             .then(images => {
                 //get a random image from the array
                 image = (images[Math.floor(Math.random() * images.length)])
