@@ -48,8 +48,10 @@ module.exports = {
                 if (dealerScore > 10) {
                     //if player busts, take away 10 score, net gain of 1
                     dealerScore += 1;
+                }else{
+                    dealerScore += 11;
                 }
-                dealerScore += 11;
+                
             } else {
                 dealerScore += parseInt(value, 10);
             }
