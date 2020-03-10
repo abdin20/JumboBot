@@ -15,19 +15,15 @@ let credentials = new CognitiveServicesCredentials(serviceKey);
 let imageSearchApiClient = new Search.ImageSearchAPIClient(credentials);
 
 module.exports = {
-    name: 'attack',
-    description: '$attack <user>',
+    name: 'defend',
+    description: '$defend - this defends from an attack',
 
 
     async execute(message, args) {
         //if no arguments
-        if (!args) {
-            message.reply("you need to mention a user!")
-            return;
-        }
 
         const sendQuery = async () => {
-            return await imageSearchApiClient.imagesOperations.search("anime fight gif");
+            return await imageSearchApiClient.imagesOperations.search("anime defend gif");
         };
         
         sendQuery().then(imageResults => {
@@ -40,7 +36,7 @@ module.exports = {
                 let url=randomImageResult.contentUrl
                 console.log(randomImageResult)
                  //SET THE TEXT TO SEND
-                 msg = `<@${message.author.id}> approaches ${message.mentions.users.first()}`
+                 msg = `<@${message.author.id}> defends himself}`
         
                  message.channel.send(msg, { files: [url] });
 
