@@ -16,7 +16,7 @@ module.exports = {
          //get balance
          balance = await mongo.findBalanceById(message.author.id)
          //check if enough coins
-         if (balance<parseInt(args[1],10)){
+         if (balance<parseInt(args[1],10) || parseInt(args[1],10)<0 ){
              message.channel.send("not enough shekels")
              return;
          }

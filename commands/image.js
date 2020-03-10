@@ -1,36 +1,55 @@
-const imageSearch = require('image-search-google');
-const imageClient = new imageSearch(process.env.CSI, process.env.GOOGLE_API);
- 
+const fs = require('fs');
+const Discord = require('discord.js');
+
+const ImageSearchAPIClient = require('@azure/cognitiveservices-imagesearch');
+const CognitiveServicesCredentials = require('ms-rest-azure').CognitiveServicesCredentials;
+const Search = require('azure-cognitiveservices-search');
+
+//replace this value with your valid subscription key.
+let serviceKey = process.env.AZURE_KEY;
+
+
+//instantiate the image search client
+let credentials = new CognitiveServicesCredentials(serviceKey);
+let imageSearchApiClient = new Search.ImageSearchAPIClient(credentials);
 
 module.exports = {
-	name: 'image',
-	description: '$image <search>',
-	execute(message, args) {
+    name: 'image',
+    description: '$image <serach>',
 
-        //if there is no arguements
-        if(!args){
-            message.reply("You need to enter a search string");
+
+    async execute(message, args) {
+        //if no arguments
+        if (!args) {
+            message.reply("you need to enter a search term")
             return;
         }
 
-        //search google
-        imageClient.search(args[0], {})
-    .then(images => {
-        /*
-        [{
-            'url': item.link,
-            'thumbnail':item.image.thumbnailLink,
-            'snippet':item.title,
-            'context': item.image.contextLink
-        }]
-         */
-        //get a random image from the array
-        image=(images[Math.floor(Math.random()*images.length)])
+        //query method
+        const sendQuery = async () => {
+            return await imageSearchApiClient.imagesOperations.search(args[0]);
+        };
 
-        //send the message to the channel
-        message.channel.send(image.snippet,{files: [image.url]});
+        //call it and once it returns, we go through the data
+        sendQuery().then(imageResults => {
+            if (imageResults == null) {
+            console.log("No image results were found.");
+            }
+            else {
+                console.log(`Total number of images returned: ${imageResults.value.length}`);
+                let randomImageResult = imageResults.value[ Math.floor(  Math.random()*imageResults.value.length)];
+                let url=randomImageResult.contentUrl
+                 //SET THE TEXT TO SEND
+                 msg = randomImageResult.name;
         
-    })
-    .catch(error => message.reply("Couldn't find any images"));     
-	},
+                 message.channel.send(msg, { files: [url] });
+
+            }
+          })
+          .catch(err => console.error(err))
+        
+
+
+           
+    },
 };

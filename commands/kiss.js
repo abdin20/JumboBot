@@ -2,8 +2,17 @@
 const fs = require('fs');
 const Discord = require('discord.js');
 
-const imageSearch = require('image-search-google');
-const imageClient = new imageSearch(process.env.CSI, process.env.GOOGLE_API);
+const ImageSearchAPIClient = require('@azure/cognitiveservices-imagesearch');
+const CognitiveServicesCredentials = require('ms-rest-azure').CognitiveServicesCredentials;
+const Search = require('azure-cognitiveservices-search');
+
+//replace this value with your valid subscription key.
+let serviceKey = process.env.AZURE_KEY;
+
+
+//instantiate the image search client
+let credentials = new CognitiveServicesCredentials(serviceKey);
+let imageSearchApiClient = new Search.ImageSearchAPIClient(credentials);
 
 module.exports = {
     name: 'kiss',
@@ -12,25 +21,33 @@ module.exports = {
 
     async execute(message, args) {
         //if no arguments
-        var pictures=[];
         if (!args) {
             message.reply("you need to mention a user!")
             return;
         }
 
-        var num=Math.floor( (Math.random()*4) + 1)
-        //search google
-        imageClient.search("anime kissing gif", {page : num })
-            .then(images => {
-                //get a random image from the array
-                image = (images[Math.floor(Math.random() * images.length)])
-
-                //SET THE TEXT TO SEND
-                msg = `<@${message.author.id}> kissed ${message.mentions.users.first()}`
+        const sendQuery = async () => {
+            return await imageSearchApiClient.imagesOperations.search("anime kissing gif");
+        };
         
-                message.channel.send(msg, { files: [image] });
-            })
-            .catch(error => message.reply("Couldn't find any images"));
+        sendQuery().then(imageResults => {
+            if (imageResults == null) {
+            console.log("No image results were found.");
+            }
+            else {
+                console.log(`Total number of images returned: ${imageResults.value.length}`);
+                let randomImageResult = imageResults.value[ Math.floor(  Math.random()*imageResults.value.length)];
+                let url=randomImageResult.contentUrl
+                console.log(randomImageResult)
+                 //SET THE TEXT TO SEND
+                 msg = `<@${message.author.id}> kissed ${message.mentions.users.first()}`
+        
+                 message.channel.send(msg, { files: [url] });
+
+            }
+          })
+          .catch(err => console.error(err))
+        
 
 
            

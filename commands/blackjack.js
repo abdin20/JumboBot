@@ -18,7 +18,7 @@ module.exports = {
 		dealerMessage = "Dealer: ";
 
 		//check syntax
-		if (args.length < 1 || isNaN(args[0])) {
+		if (args.length < 1 || isNaN(args[0]) || args[0]<0) {
 			message.channel.send("Error, please follow the syntax $blackjack <bet>")
 			return;
 		}
