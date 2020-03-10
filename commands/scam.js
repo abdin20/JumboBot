@@ -9,6 +9,15 @@ var scams = ["You sold 6 fake rolex's",
     "You received your inheritance from the Nigerian Prince",
     "You won a dollar scratcher",
     "You sold your piss to some guy in the bathroom",
+    "You stole a dodge charger",
+    "You worked as a KFC manager",
+    "You lied and deceived",
+    "You rubbed your hands menancingly",
+    "You exchanged your food stamps",
+    "You SIMPED",
+    "You followed orders",
+    "You created the COVID-19 virus for the US government",
+    "You went to prison",
 ];
 
 module.exports = {
