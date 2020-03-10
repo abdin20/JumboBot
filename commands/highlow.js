@@ -1,4 +1,5 @@
 var mongo = require("../mongodb.js");
+const Discord = require('discord.js');
 module.exports = {
 	name: 'highlow',
 	description: '$highlow <low/high> <bet>',
@@ -23,12 +24,18 @@ module.exports = {
          results= await this.playHighLow(args);
          balance=balance+results[1];
          await mongo.updateUserById(message.author.id, {balance:balance})
- 
+         
+         exampleEmbed = new Discord.MessageEmbed();
+         exampleEmbed.setColor('#0099ff');
+         exampleEmbed.setTitle("High Low");
+
          if(results[0]=="win"){
-             message.reply("Rolled "+`${results[2]}`+ "\nYou Won "+ `${results[1]}` +"\n Balance: " + `${balance}`)
+             exampleEmbed.setDescription("Rolled "+`${results[2]}`+ "\nYou Won "+ `${results[1]}` +"\n Balance: " + `${balance}` +" shekels");
          }else{
-             message.reply("Rolled "+`${results[2]}`+ "\nYou lose" +"\n Balance: " + `${balance}`);
-         }
+             exampleEmbed.setDescription("Rolled "+`${results[2]}`+ "\nYou lose" +"\n Balance: " + `${balance}` +" shekels");
+         }  
+
+         message.reply(exampleEmbed)
  
     },
 
