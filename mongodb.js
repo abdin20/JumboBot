@@ -79,10 +79,18 @@ exports.createGameByObject= async function createGameByType(gameObject){
 }
 
 //update gambling game
-exports.updateGameById= async function updateGameById(id,channelId,type,propertyObject){
+exports.updateGameByMessageId= async function updateGameByMessageId(messageId,propertyObject){
+    result = await mongodClient.db("userData").collection("games")
+        .updateOne({ messageId: messageId }, { $set: propertyObject });
+
+        console.log("updated game");
+}
+
+
+//delete game object 
+exports.deleteGamebyObject= async function deleteGamebyObject(propertyObject){
     
     result = await mongodClient.db("userData").collection("games")
-        .updateOne({ id: id, channelId:channelId, type:type }, { $set: propertyObject });
+        .deleteOne(propertyObject);
 
-        console.log("updated " +gameObject.type + " game")
 }

@@ -26,7 +26,6 @@ module.exports = {
 		// uncomment when ready to fully implement game
 		// check if playing game
 		result = await mongo.findGameByType(message.author.id, message.channel.id, "blackjack")
-		console.log(result)
 		if (result) {
 			message.reply("You're already in a game");
 			return;
@@ -108,8 +107,8 @@ module.exports = {
 		/////////////////////////////////////game logic
 		//set the blackjack game variables
 
-		msg = playerMessage + " Total: " + playerScore + "\n" + dealerMessage + " Total: " + dealerScore;
-
+		msg = playerMessage + " Total: " + playerScore + "\n \n" + dealerMessage + " Total: " + dealerScore;
+		msg+="\n +hit to get another card \n +stand to STAND"
 		//embed message of the game
 		exampleEmbed = new Discord.MessageEmbed();
 		exampleEmbed.setColor('#0099ff');
@@ -122,7 +121,7 @@ module.exports = {
 			game = new Object();
 			game.id = message.author.id;
 			game.channelId = message.channel.id;
-			game.message = sent.id;
+			game.messageId = sent.id;
 			game.bet=args[0];
 			game.type = "blackjack";
 			game.playerCards = playerCards;
