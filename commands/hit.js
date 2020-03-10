@@ -76,7 +76,7 @@ module.exports = {
         }
          //organize dealer and player hands in string
          msg = "Player: " + playerMessage + " Total: " + playerScore + "\n \n Dealer: " + dealerMessage + " Total: " + dealerScore;
-         msg+="\n +hit to get another card \n +stand to STAND"
+         msg+="\n $hit to get another card \n $stand to STAND \n "
 
         if (playerScore > 21) {
             msg+="\n You Lose!"

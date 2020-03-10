@@ -108,7 +108,7 @@ module.exports = {
 		//set the blackjack game variables
 
 		msg = playerMessage + " Total: " + playerScore + "\n \n" + dealerMessage + " Total: " + dealerScore;
-		msg+="\n +hit to get another card \n +stand to STAND"
+		msg+="\n $hit to get another card \n $stand to STAND"
 		//embed message of the game
 		exampleEmbed = new Discord.MessageEmbed();
 		exampleEmbed.setColor('#0099ff');

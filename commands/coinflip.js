@@ -8,6 +8,13 @@ module.exports = {
             result = "tails"
         }
 
-        message.channel.send(result);
+        //display nicely with embeds
+        exampleEmbed = new Discord.MessageEmbed();
+        exampleEmbed.setColor('#0099ff');
+        exampleEmbed.setTitle("Coinflip");
+       
+        exampleEmbed.setDescription("Coin flipped to " + result);
+
+        message.channel.send(exampleEmbed);
 	},
 };
