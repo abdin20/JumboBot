@@ -25,9 +25,11 @@ module.exports = {
             return;
         }
 
+        //dont need quote for searching anymore
+        search=args.join(" ")
         //query method
         const sendQuery = async () => {
-            return await imageSearchApiClient.imagesOperations.search(args[0]);
+            return await imageSearchApiClient.imagesOperations.search(search);
         };
 
         //call it and once it returns, we go through the data

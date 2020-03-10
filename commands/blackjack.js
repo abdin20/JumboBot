@@ -6,7 +6,7 @@ var values = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
 
 module.exports = {
 	name: 'blackjack',
-	description: ' Not working - $blackjack <bet>',
+	description: '$blackjack <bet>',
 	async execute(message, args) {
 
 		playerCards = [];
