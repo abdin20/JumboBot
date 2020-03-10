@@ -57,12 +57,12 @@ module.exports = {
 						playerScore += 10;
 
 						//check for Ace
-					} else if (value == "A") {
-						playerScore += 11;
-						if (playerScore > 20) {
+					} else if (value == "A") {						
+						if (playerScore > 10) {
 							//if player busts, take away 10 score, net gain of 1
-							playerScore += -10;
+							playerScore += 1;
 						}
+						playerScore += 11;
 					} else {
 						playerScore += parseInt(value, 10);
 					}

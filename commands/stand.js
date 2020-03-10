@@ -45,11 +45,11 @@ module.exports = {
 
                 //check for Ace
             } else if (value == "A") {
-                dealerScore += 11;
-                if (dealerScore > 20) {
+                if (dealerScore > 10) {
                     //if player busts, take away 10 score, net gain of 1
-                    dealerScore += -10;
+                    dealerScore += 1;
                 }
+                dealerScore += 11;
             } else {
                 dealerScore += parseInt(value, 10);
             }
