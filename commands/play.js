@@ -1,7 +1,8 @@
 const Discord = require('discord.js');
 const yts = require( 'yt-search' )
 const ytdl = require('ytdl-core');
-
+const fs = require('fs');
+const ffmpeg=require("ffmpeg")
 module.exports = {
 	name: 'play',
 	description: '$play <search term for youtube>',
@@ -34,12 +35,11 @@ module.exports = {
           await voiceChannel.join().then(foo = async connection => {
             console.log("joined channel");
             //dispatcher plays the audio
-            const dispatcher = connection.play(ytdl(url), { filter : 'audioonly' });
-            dispatcher.setVolume(0.35);
-            dispatcher.on("end", end => {
+            console.log(`Playing ${url}`)
+            const dispatcher = connection.play(ytdl(url), { filter: 'audioonly', quality:'lowestaudio' }).on("finish", () => {
                 console.log("left channel");
                  voiceChannel.leave();
-            });
+            }).on("error",error=>{ connection.play(ytdl(r.videos[2].url), { filter: 'audioonly', quality:'lowestaudio' })                     });
         }).catch(err => console.log(err));
 
 
