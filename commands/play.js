@@ -2,7 +2,6 @@ const Discord = require('discord.js');
 const yts = require( 'yt-search' )
 const ytdl = require('ytdl-core');
 const fs = require('fs');
-const ffmpeg=require("ffmpeg")
 module.exports = {
 	name: 'play',
 	description: '$play <search term for youtube>',

@@ -1,7 +1,6 @@
 
 const fs = require('fs');
 const Discord = require('discord.js');
-const ffmpeg=require("ffmpeg")
 module.exports = {
 	name: 'talk',
 	description: 'talk',
