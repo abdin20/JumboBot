@@ -107,7 +107,7 @@ module.exports = {
         await mongo.updateQueueByChannelId(message.channel.id, { songs: songs })
         this.playMusic(message);
 
-      }).on("error", error => { connection.play(ytdl(r.videos[2].url), { filter: 'audioonly', quality: 'lowestaudio' }) });
+      }).on("error", error => { connection.play(ytdl(r.videos[2].url), { filter: 'audioonly'}) });
     }).catch(err => console.log(err));
 
   },
