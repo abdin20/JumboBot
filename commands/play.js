@@ -95,7 +95,7 @@ module.exports = {
       message.channel.send(exampleEmbed)
 
       //play the audio
-      const dispatcher = connection.play(ytdl(url), { filter: 'audioonly', quality: 'lowestaudio' }).on("finish", async () => {
+      const dispatcher = connection.play(ytdl(url), { filter: 'audioonly'}).on("finish", async () => {
 
         //get the latest song queue
         results = await mongo.findQueueByChannelId(message.channel.id)
@@ -107,7 +107,7 @@ module.exports = {
         await mongo.updateQueueByChannelId(message.channel.id, { songs: songs })
         this.playMusic(message);
 
-      }).on("error", error => { connection.play(ytdl(r.videos[2].url), { filter: 'audioonly'}) });
+      }).on("error", error => { connection.play(ytdl(r.videos[1].url), { filter: 'audioonly'}) });
     }).catch(err => console.log(err));
 
   },
