@@ -32,6 +32,19 @@ module.exports = {
       return;
     }
 
+    //song url
+    var url=""
+    var title=search
+
+    //if its a youtube link or not a link and a search term, use yts library
+    if((search.indexOf("http")>-1 && search.indexOf("yout")>-1) || search.indexOf("http")<0){
+      const r = await yts(search)
+      console.log(r)
+      url = r.videos[0].url
+      title=r.videos[0].title
+    }else{
+      url=search;
+    }
 
     //get queue from db if it doesnt exists
     results = await mongo.findQueueByChannelId(message.channel.id);
@@ -39,21 +52,19 @@ module.exports = {
       //if no queue, make one, add to db, and run teh playmusic
       propertyObject = new Object();
       propertyObject.channelId = message.channel.id
-
-      const r = await yts(search)
-      url = r.videos[0].url
       propertyObject.songs = [url]
+
       await mongo.createQueueByObject(propertyObject)
+      exampleEmbed.setDescription(`Added ${title} to queue`);
+      message.channel.send(exampleEmbed);
       await this.playMusic(message);
       return;
     } else {  //if the queue exists then we add it to queue
       //search youtube for the terms and get url
-      const r = await yts(search)
-      exampleEmbed.setDescription(`Added ${r.videos[0].title} to queue`);
+      exampleEmbed.setDescription(`Added ${title} to queue`);
       message.channel.send(exampleEmbed);
-      url = r.videos[0].url
-      addSong = results.songs;
 
+      addSong = results.songs;
       addSong.push(url)
       await mongo.updateQueueByChannelId(message.channel.id, { songs: addSong })
 
@@ -84,18 +95,57 @@ module.exports = {
       console.log("joined channel");
       //dispatcher plays the audio
 
-      const r = await yts(url)
-      title = r.videos[0].title
+
 
       //send to discord
       exampleEmbed = new Discord.MessageEmbed();
       exampleEmbed.setColor('#0099ff');
       exampleEmbed.setTitle("Playing");
+
+
+
+      //IF YOUTUBe LINK
+
+      if(url.indexOf("yout")>-1){
+      //play the audio
+      const r = await yts(url)
+      title=r.videos[0].title
       exampleEmbed.setDescription(`${title}`)
       message.channel.send(exampleEmbed)
+      const dispatcher = connection.play(ytdl(url,{ quality:"highestaudio" })).on("finish", async () => {
 
-      //play the audio
-      const dispatcher = connection.play(ytdl(url), { filter: 'audioonly'}).on("finish", async () => {
+        //get the latest song queue
+        results = await mongo.findQueueByChannelId(message.channel.id)
+        songs = results.songs
+        //get the url for the first song in queue, whilst removing it from the array
+        url = songs.shift();
+        console.log(`Finished ${title}`)
+        //update the queue with the removed first song
+        await mongo.updateQueueByChannelId(message.channel.id, { songs: songs })
+        this.playMusic(message);
+
+      }).on("error", async error => { message.channel.send("Error youtube") 
+    
+    
+    
+      results = await mongo.findQueueByChannelId(message.channel.id)
+      songs = results.songs
+      //get the url for the first song in queue, whilst removing it from the array
+      url = songs.shift();
+      console.log(`Finished ${title}`)
+      //update the queue with the removed first song
+      await mongo.updateQueueByChannelId(message.channel.id, { songs: songs })
+      this.playMusic(message);
+    
+   
+    });
+
+      //else its a normal link
+      }else{
+    //play the audio with link
+    exampleEmbed.setDescription(`${url}`)
+    message.channel.send(exampleEmbed)
+      const dispatcher = connection.play(url).on("finish", async () => {
 
         //get the latest song queue
         results = await mongo.findQueueByChannelId(message.channel.id)
@@ -107,7 +157,9 @@ module.exports = {
         await mongo.updateQueueByChannelId(message.channel.id, { songs: songs })
         this.playMusic(message);
 
-      }).on("error", error => { connection.play(ytdl(r.videos[1].url), { filter: 'audioonly'}) });
+      }).on("error",async error => { message.channel.send("Error direct link") });
+    }
+
     }).catch(err => console.log(err));
 
   },
