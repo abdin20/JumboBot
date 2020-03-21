@@ -49,7 +49,7 @@ module.exports = {
 
     //get queue from db if it doesnt exists
     results = await mongo.findQueueByChannelId(message.channel.id);
-    if (!results || results.songs.length==0) {
+    if (!results) {
       //if no queue, make one, add to db, and run teh playmusic
       propertyObject = new Object();
       propertyObject.channelId = message.channel.id
@@ -60,6 +60,19 @@ module.exports = {
       message.channel.send(exampleEmbed);
       await this.playMusic(message);
       return;
+    }else if(results.songs.length==0){    //if queue is empty 
+      exampleEmbed.setDescription(`Added ${title} to queue`);
+      message.channel.send(exampleEmbed);
+
+      //get song queue and add the new song
+      addSong = results.songs;
+      addSong.push(url) 
+
+      //push it to db
+      await mongo.updateQueueByChannelId(message.channel.id, { songs: addSong })
+
+      await this.playMusic(message); //run the play loop once more
+
     } else {  //if the queue exists then we add it to queue
       //search youtube for the terms and get url
       exampleEmbed.setDescription(`Added ${title} to queue`);
