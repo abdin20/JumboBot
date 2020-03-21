@@ -36,7 +36,7 @@ module.exports = {
     var url=""
     var title=search
 
-    //if its a youtube link or not a link and a search term, use yts library
+    /////////////if its a youtube link or not a link and a search term, use yts library
     if((search.indexOf("http")>-1 && search.indexOf("yout")>-1) || search.indexOf("http")<0){
       const r = await yts(search)
       console.log(r)
@@ -45,10 +45,11 @@ module.exports = {
     }else{
       url=search;
     }
+//////////////////////////////////
 
     //get queue from db if it doesnt exists
     results = await mongo.findQueueByChannelId(message.channel.id);
-    if (!results) {
+    if (!results || results.songs.length==0) {
       //if no queue, make one, add to db, and run teh playmusic
       propertyObject = new Object();
       propertyObject.channelId = message.channel.id
@@ -83,8 +84,6 @@ module.exports = {
       //delete the queue and leave if the size is 0
       if (!results || results.songs.length == 0) {
         await mongo.deleteQueueByObject({ channelId: message.channel.id });
-        voiceChannel.leave();
-        console.log("left channel");
         return;
       }
 
@@ -124,8 +123,7 @@ module.exports = {
         await mongo.updateQueueByChannelId(message.channel.id, { songs: songs })
         this.playMusic(message);
 
-      }).on("error", async error => { message.channel.send("Error youtube") 
-    
+      }).on("error", async error => { message.channel.send("Error youtube")  ///youtube error method
     
     
       results = await mongo.findQueueByChannelId(message.channel.id)
@@ -140,7 +138,7 @@ module.exports = {
    
     });
 
-      //else its a normal link
+      //else its a direct link//////////////////////////////////////////////////////////////
       }else{
     //play the audio with link
     exampleEmbed.setDescription(`${url}`)
@@ -157,10 +155,32 @@ module.exports = {
         await mongo.updateQueueByChannelId(message.channel.id, { songs: songs })
         this.playMusic(message);
 
-      }).on("error",async error => { message.channel.send("Error direct link") });
+      }).on("error",async error => { message.channel.send("Error direct link") 
+      
+      results = await mongo.findQueueByChannelId(message.channel.id)
+      songs = results.songs
+      //get the url for the first song in queue, whilst removing it from the array
+      url = songs.shift();
+      //update the queue with the removed first song
+      await mongo.updateQueueByChannelId(message.channel.id, { songs: songs })
+      this.playMusic(message);
+    
+    
+    });
     }
+      ////////////main error of playMessage method
+    }).catch( async err => {console.log(err)
+    
+    
+      results = await mongo.findQueueByChannelId(message.channel.id)
+      songs = results.songs
+      //get the url for the first song in queue, whilst removing it from the array
+      url = songs.shift();
+      //update the queue with the removed first song
+      await mongo.updateQueueByChannelId(message.channel.id, { songs: songs })
+      this.playMusic(message);
 
-    }).catch(err => console.log(err));
+    });
 
   },
 
