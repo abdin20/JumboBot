@@ -45,6 +45,7 @@ module.exports = {
             exampleEmbed.setDescription("Skipped "+ song);
             message.channel.send(exampleEmbed);
             await mongo.deleteQueueByObject({ channelId: message.channel.id });
+            play.playMusic(message);
             
         }
 

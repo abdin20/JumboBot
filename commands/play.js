@@ -100,6 +100,7 @@ module.exports = {
       //delete the queue and leave if the size is 0
       if (!results || results.songs.length == 0) {
         await mongo.deleteQueueByObject({ channelId: message.channel.id });
+        connection.disconnect();
         return;
       }
 
