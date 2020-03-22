@@ -22,7 +22,7 @@ module.exports = {
         dealerCards = result.dealerCards;
         playerScore = result.playerScore;
         dealerScore = result.dealerScore;
-        bet=result.bet;
+        bet = result.bet;
 
         dealerMessage = "";
         playerMessage = "";
@@ -39,27 +39,40 @@ module.exports = {
                 suit = suits[Math.floor(Math.random() * 4)]
                 value = values[Math.floor(Math.random() * 13)]
             }
-            //check for face cards
-            if (value == "Q" || value == "J" | value == "K") {
-                dealerScore += 10;
-
-                //check for Ace
-            } else if (value == "A") {
-                if (dealerScore > 10) {
-                    //if player busts, take away 10 score, net gain of 1
-                    dealerScore += 1;
-                }else{
-                    dealerScore += 11;
-                }
-                
-            } else {
-                dealerScore += parseInt(value, 10);
-            }
 
             //push the card as a string
             dealerCards.push(suit + ":" + value);
 
+        
+            var aces = 0;
+            dealerScore = 0;
+
+            //loop though all cards
+            for (let k = 0; k < dealerCards.length; k++) {
+
+                //get card
+                card = dealerCards[k].substring(dealerCards[k].indexOf(":") + 1);
+                //keep track of aces
+                if (card == "A") {
+                    aces += 1; //count aces
+                } else if (card == "Q" || card == "J" || card == "K") { //otherwise add score normally
+                    dealerScore += 10;
+                } else {
+                    dealerScore += parseInt(card);
+                }
+            }
+
+            //check for aces last
+            for (let m = 0; m < aces; m++) {
+                if (dealerScore > 10) {
+                    dealerScore += 1;
+                } else {
+                    dealerScore += 11;
+                }
+            }
+
         }
+
 
         //add all teh dealer cards to a string
         for (let k = 0; k < dealerCards.length; k++) {
@@ -77,7 +90,7 @@ module.exports = {
 
         //organize dealer and player hands in string
         msg = "Player: " + playerMessage + " Total: " + playerScore + "\n \n Dealer: " + dealerMessage + " Total: " + dealerScore;
-    
+
 
         //end game conditions
         if (dealerScore == playerScore) {
