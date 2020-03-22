@@ -38,7 +38,7 @@ module.exports = {
         } else {
             //else skip the 1 song in queue by deleteing current queue and leave voice
             await mongo.deleteQueueByObject({ channelId: message.channel.id });
-            voiceChannel.leave();
+            
         }
 
     },

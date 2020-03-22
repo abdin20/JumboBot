@@ -16,12 +16,11 @@ module.exports = {
 
 		playerMessage = "Player: ";
 		dealerMessage = "Dealer: ";
+		bet = 0;
 
-		//check syntax
-		if (args.length < 1 || isNaN(args[0]) || args[0]<0) {
-			message.channel.send("Error, please follow the syntax $blackjack <bet>")
-			return;
-		}
+		//get balance
+		balance = await mongo.findBalanceById(message.author.id)
+
 
 		// uncomment when ready to fully implement game
 		// check if playing game
@@ -31,15 +30,31 @@ module.exports = {
 			return;
 		}
 
-		//get balance
-		balance = await mongo.findBalanceById(message.author.id)
-		//check if enough coins
-		if (balance < parseInt(args[0], 10)) {
-			message.channel.send("not enough shekels")
+		//check if 1 arguement is there
+		if (args.length < 1) {
+			message.channel.send("Error, please follow the syntax $blackjack <bet>")
+			return;
+		}
+
+		//handling bet arguement
+		if (args[0] == "all") {
+			bet =balance; 
+			//if not a number or less than 0 cant bet
+		}else if( isNaN(args[0]) || args[0]<0  ){
+			message.channel.send("Error, please follow the syntax $blackjack <bet>")
 			return;
 		}else{
+			bet=parseInt(args[0],10);
+		}
+
+		
+		//check if enough coins
+		if (balance < bet) {
+			message.channel.send("not enough shekels")
+			return;
+		} else {
 			//update balance with bet
-			await mongo.updateUserById(message.author.id,{balance:balance-args[0]})
+			await mongo.updateUserById(message.author.id, { balance: balance - bet })
 		}
 
 		///////////////////////////////////////////game logic
@@ -57,14 +72,14 @@ module.exports = {
 						playerScore += 10;
 
 						//check for Ace
-					} else if (value == "A") {						
+					} else if (value == "A") {
 						if (playerScore > 10) {
 							//if player busts, take away 10 score, net gain of 1
 							playerScore += 1;
-						}else{
+						} else {
 							playerScore += 11;
 						}
-						
+
 					} else {
 						playerScore += parseInt(value, 10);
 					}
@@ -90,9 +105,9 @@ module.exports = {
 					} else if (value == "A") {
 						if (dealerScore > 10) {
 							//if player busts, take away 10 score, net gain of 1
-							dealerScore +=1;
-						}else{
-							dealerScore +=11;
+							dealerScore += 1;
+						} else {
+							dealerScore += 11;
 						}
 					} else {
 						dealerScore += parseInt(value, 10);
@@ -111,7 +126,7 @@ module.exports = {
 		//set the blackjack game variables
 
 		msg = playerMessage + " Total: " + playerScore + "\n \n" + dealerMessage + " Total: " + dealerScore;
-		msg+="\n $hit to get another card \n $stand to STAND"
+		msg += "\n $hit to get another card \n $stand to STAND"
 		//embed message of the game
 		exampleEmbed = new Discord.MessageEmbed();
 		exampleEmbed.setColor('#0099ff');
@@ -125,7 +140,7 @@ module.exports = {
 			game.id = message.author.id;
 			game.channelId = message.channel.id;
 			game.messageId = sent.id;
-			game.bet=args[0];
+			game.bet = args[0];
 			game.type = "blackjack";
 			game.playerCards = playerCards;
 			game.dealerCards = dealerCards;
