@@ -30,13 +30,20 @@ module.exports = {
         } else if (results.songs.length > 1) {
             //shift the array 
             songs = results.songs;
-            songs.shift();
+            song= songs.shift();
 
+            exampleEmbed.setDescription("Skipped "+ song);
+            message.channel.send(exampleEmbed);
             //update to db and play music
             await mongo.updateQueueByChannelId(message.channel.id, { songs: songs })
             play.playMusic(message);
         } else {
             //else skip the 1 song in queue by deleteing current queue and leave voice
+            songs = results.songs;
+            song= songs.shift();
+
+            exampleEmbed.setDescription("Skipped "+ song);
+            message.channel.send(exampleEmbed);
             await mongo.deleteQueueByObject({ channelId: message.channel.id });
             
         }

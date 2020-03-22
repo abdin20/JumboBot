@@ -56,12 +56,14 @@ module.exports = {
       propertyObject.songs = [url]
 
       await mongo.createQueueByObject(propertyObject)
+      exampleEmbed.setURL(url);
       exampleEmbed.setDescription(`Added ${title} to queue`);
       message.channel.send(exampleEmbed);
       await this.playMusic(message);
       return;
     }else if(results.songs.length==0){    //if queue is empty 
       exampleEmbed.setDescription(`Added ${title} to queue`);
+      exampleEmbed.setURL(url);
       message.channel.send(exampleEmbed);
 
       //get song queue and add the new song
@@ -75,6 +77,7 @@ module.exports = {
 
     } else {  //if the queue exists then we add it to queue
       //search youtube for the terms and get url
+      exampleEmbed.setURL(url);
       exampleEmbed.setDescription(`Added ${title} to queue`);
       message.channel.send(exampleEmbed);
 
@@ -122,6 +125,7 @@ module.exports = {
       //play the audio
       const r = await yts(url)
       title=r.videos[0].title
+      exampleEmbed.setURL(url);
       exampleEmbed.setDescription(`${title}`)
       message.channel.send(exampleEmbed)
       const dispatcher = connection.play(ytdl(url,{ quality:"highestaudio" })).on("finish", async () => {
@@ -154,6 +158,7 @@ module.exports = {
       //else its a direct link//////////////////////////////////////////////////////////////
       }else{
     //play the audio with link
+    exampleEmbed.setURL(url);
     exampleEmbed.setDescription(`${url}`)
     message.channel.send(exampleEmbed)
       const dispatcher = connection.play(url).on("finish", async () => {
