@@ -16,7 +16,7 @@ module.exports = {
 
 		playerMessage = "Player: ";
 		dealerMessage = "Dealer: ";
-		bet = 0;
+		var bet = 0;
 
 		//get balance
 		balance = await mongo.findBalanceById(message.author.id)
@@ -130,7 +130,7 @@ module.exports = {
 		//embed message of the game
 		exampleEmbed = new Discord.MessageEmbed();
 		exampleEmbed.setColor('#0099ff');
-		exampleEmbed.setTitle("Blackjack - " + args[0] + " shekels");
+		exampleEmbed.setTitle("Blackjack - " + bet + " shekels");
 
 		//update the message last, then send it
 		exampleEmbed.setDescription(msg);
@@ -140,7 +140,7 @@ module.exports = {
 			game.id = message.author.id;
 			game.channelId = message.channel.id;
 			game.messageId = sent.id;
-			game.bet = args[0];
+			game.bet = bet;
 			game.type = "blackjack";
 			game.playerCards = playerCards;
 			game.dealerCards = dealerCards;
