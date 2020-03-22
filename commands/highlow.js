@@ -6,22 +6,38 @@ module.exports = {
 	async execute(message, args) {
 		 //get the rest of teh word
         
+         var bet=0;
         
  
          //check errors
-         if (args.length<2 || !isNaN(args[0]) || isNaN(args[1])){
+         if (args.length<2 || !isNaN(args[0])){
              message.channel.send("Error, please follow the syntax $highlow <low/high> <bet>")
              return;
          }
          //get balance
          balance = await mongo.findBalanceById(message.author.id)
          //check if enough coins
-         if (balance<parseInt(args[1],10) || parseInt(args[1],10)<0 ){
+
+         //handling bet arguement
+		if (args[1] == "all") {
+			bet =balance; 
+			//if not a number or less than 0 cant bet
+		}else if( isNaN(args[1]) || args[1]<0  ){
+			message.channel.send("Error, please follow the syntax $blackjack <bet>")
+			return;
+		}else{
+			bet=parseInt(args[1],10);
+		}
+
+
+
+         if (balance<bet || bet<0){
              message.channel.send("not enough shekels")
              return;
          }
  
-         results= await this.playHighLow(args);
+         words=[args[0], bet.toString()];
+         results= await this.playHighLow(words);
          balance=balance+results[1];
          await mongo.updateUserById(message.author.id, {balance:balance})
          

@@ -84,10 +84,11 @@ module.exports = {
             msg+="\n You Lose!"
         //get the game info once again and delete it
         result = await mongo.findGameByType(message.author.id, message.channel.id, "blackjack")
-        
+        await mongo.deleteGamebyObject({ messageId: result.messageId });
+
+              
         balance = await mongo.findBalanceById(message.author.id)
         msg += "\n You have " + balance + " shekels"
-        await mongo.deleteGamebyObject({ messageId: result.messageId });
         }
 
          //display nicely with embeds
