@@ -20,7 +20,7 @@ module.exports = {
         } 
         
         //delete queue and leave
-         await mongo.deleteQueueByObject({ channelId: message.channel.id });
+         await mongo.deleteQueueByObject({ guildId: message.guild.id });
          message.member.voice.channel.leave();
 	},
 };

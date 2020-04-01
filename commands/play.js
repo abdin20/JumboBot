@@ -39,7 +39,6 @@ module.exports = {
     /////////////if its a youtube link or not a link and a search term, use yts library
     if((search.indexOf("http")>-1 && search.indexOf("yout")>-1) || search.indexOf("http")<0){
       const r = await yts(search)
-      console.log(r)
       url = r.videos[0].url
       title=r.videos[0].title
     }else{
@@ -48,11 +47,11 @@ module.exports = {
 //////////////////////////////////
 
     //get queue from db if it doesnt exists
-    results = await mongo.findQueueByChannelId(message.channel.id);
+    results = await mongo.findQueueByGuildId(message.guild.id);
     if (!results) {
       //if no queue, make one, add to db, and run teh playmusic
       propertyObject = new Object();
-      propertyObject.channelId = message.channel.id
+      propertyObject.guildId = message.guild.id
       propertyObject.songs = [url]
 
       await mongo.createQueueByObject(propertyObject)
@@ -71,7 +70,7 @@ module.exports = {
       addSong.push(url) 
 
       //push it to db
-      await mongo.updateQueueByChannelId(message.channel.id, { songs: addSong })
+      await mongo.updateQueueByGuildId(message.guild.id, { songs: addSong })
 
       await this.playMusic(message); //run the play loop once more
 
@@ -83,7 +82,7 @@ module.exports = {
 
       addSong = results.songs;
       addSong.push(url)
-      await mongo.updateQueueByChannelId(message.channel.id, { songs: addSong })
+      await mongo.updateQueueByGuildId(message.guild.id, { songs: addSong })
 
       return;
     }
@@ -95,12 +94,12 @@ module.exports = {
 
     //join channel and play
     await voiceChannel.join().then(foo = async connection => {
-      results = await mongo.findQueueByChannelId(message.channel.id);
+      results = await mongo.findQueueByGuildId(message.guild.id);
 
-      //delete the queue and leave if the size is 0
+      //delete the queue if the size is 0
       if (!results || results.songs.length == 0) {
-        await mongo.deleteQueueByObject({ channelId: message.channel.id });
-        connection.disconnect();
+        await mongo.deleteQueueByObject({ guildId: message.guild.id });
+        connection.play("");
         return;
       }
 
@@ -123,34 +122,36 @@ module.exports = {
       //IF YOUTUBe LINK
 
       if(url.indexOf("yout")>-1){
-      //play the audio
+      //parse link
       const r = await yts(url)
       title=r.videos[0].title
       exampleEmbed.setURL(url);
       exampleEmbed.setDescription(`${title}`)
       message.channel.send(exampleEmbed)
-      const dispatcher = connection.play(ytdl(url,{ quality:"highestaudio" })).on("finish", async () => {
 
+     
+      const dispatcher = connection.play(ytdl(url,{ quality:"highestaudio" })).on("finish", async () => {
+        
         //get the latest song queue
-        results = await mongo.findQueueByChannelId(message.channel.id)
+        results = await mongo.findQueueByGuildId(message.guild.id)
         songs = results.songs
         //get the url for the first song in queue, whilst removing it from the array
         url = songs.shift();
         console.log(`Finished ${title}`)
         //update the queue with the removed first song
-        await mongo.updateQueueByChannelId(message.channel.id, { songs: songs })
+        await mongo.updateQueueByGuildId(message.guild.id, { songs: songs })
         this.playMusic(message);
 
       }).on("error", async error => { message.channel.send("Error youtube")  ///youtube error method
     
     
-      results = await mongo.findQueueByChannelId(message.channel.id)
+      results = await mongo.findQueueByGuildId(message.guild.id)
       songs = results.songs
       //get the url for the first song in queue, whilst removing it from the array
       url = songs.shift();
       console.log(`Finished ${title}`)
       //update the queue with the removed first song
-      await mongo.updateQueueByChannelId(message.channel.id, { songs: songs })
+      await mongo.updateQueueByGuildId(message.guild.id, { songs: songs })
       this.playMusic(message);
     
    
@@ -165,23 +166,23 @@ module.exports = {
       const dispatcher = connection.play(url).on("finish", async () => {
 
         //get the latest song queue
-        results = await mongo.findQueueByChannelId(message.channel.id)
+        results = await mongo.findQueueByGuildId(message.guild.id)
         songs = results.songs
         //get the url for the first song in queue, whilst removing it from the array
         url = songs.shift();
         console.log(`Finished ${url}`)
         //update the queue with the removed first song
-        await mongo.updateQueueByChannelId(message.channel.id, { songs: songs })
+        await mongo.updateQueueByGuildId(message.guild.id, { songs: songs })
         this.playMusic(message);
 
       }).on("error",async error => { message.channel.send("Error direct link") 
       
-      results = await mongo.findQueueByChannelId(message.channel.id)
+      results = await mongo.findQueueByGuildId(message.guild.id)
       songs = results.songs
       //get the url for the first song in queue, whilst removing it from the array
       url = songs.shift();
       //update the queue with the removed first song
-      await mongo.updateQueueByChannelId(message.channel.id, { songs: songs })
+      await mongo.updateQueueByGuildId(message.guild.id, { songs: songs })
       this.playMusic(message);
     
     
@@ -191,12 +192,12 @@ module.exports = {
     }).catch( async err => {console.log(err)
     
     
-      results = await mongo.findQueueByChannelId(message.channel.id)
+      results = await mongo.findQueueByGuildId(message.guild.id)
       songs = results.songs
       //get the url for the first song in queue, whilst removing it from the array
       url = songs.shift();
       //update the queue with the removed first song
-      await mongo.updateQueueByChannelId(message.channel.id, { songs: songs })
+      await mongo.updateQueueByGuildId(message.guild.id, { songs: songs })
       this.playMusic(message);
 
     });

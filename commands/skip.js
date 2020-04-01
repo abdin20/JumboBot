@@ -20,14 +20,14 @@ module.exports = {
             message.channel.send(exampleEmbed);
             return;
         }
-        results = await mongo.findQueueByChannelId(message.channel.id);
+        results = await mongo.findQueueByGuildId(message.guild.id);
         //if there is no queue
         if (!results) {
             exampleEmbed.setDescription("Queue doesnt exist");
             message.channel.send(exampleEmbed);
 
             //if there is a queue greater than 1
-        } else if (results.songs.length > 1) {
+        } else{
             //shift the array 
             songs = results.songs;
             song= songs.shift();
@@ -35,18 +35,8 @@ module.exports = {
             exampleEmbed.setDescription("Skipped "+ song);
             message.channel.send(exampleEmbed);
             //update to db and play music
-            await mongo.updateQueueByChannelId(message.channel.id, { songs: songs })
+            await mongo.updateQueueByGuildId(message.guild.id, { songs: songs })
             play.playMusic(message);
-        } else {
-            //else skip the 1 song in queue by deleteing current queue and leave voice
-            songs = results.songs;
-            song= songs.shift();
-
-            exampleEmbed.setDescription("Skipped "+ song);
-            message.channel.send(exampleEmbed);
-            await mongo.deleteQueueByObject({ channelId: message.channel.id });
-            play.playMusic(message);
-            
         }
 
     },

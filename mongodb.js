@@ -102,21 +102,21 @@ exports.deleteGamebyObject= async function deleteGamebyObject(propertyObject){
 //create a new gambling game 
 exports.createQueueByObject= async function createQueueByObject(propertyObject){
     const newGame = await mongodClient.db("userData").collection("music").insertOne(propertyObject);
-    console.log("created song queue for : " +propertyObject.channelId);
+    console.log("created song queue for : " +propertyObject.guildId);
 }
 
 //update queue
-exports.updateQueueByChannelId= async function updateQueueByChannelId(channelId,propertyObject){
+exports.updateQueueByGuildId= async function updateQueueByGuildId(guildId,propertyObject){
     result = await mongodClient.db("userData").collection("music")
-        .updateOne({ channelId: channelId }, { $set: propertyObject });
+        .updateOne({ guildId: guildId }, { $set: propertyObject });
 
-        console.log("updated queue for "+channelId);
+        console.log("updated queue for "+guildId);
 }
 
 //find queue
 //find game from database based on type and discord id
-exports.findQueueByChannelId= async function findQueueByChannelId(channelId){
-    result = await mongodClient.db("userData").collection("music").findOne({channelId:channelId});
+exports.findQueueByGuildId= async function findQueueByGuildId(guildId){
+    result = await mongodClient.db("userData").collection("music").findOne({guildId:guildId});
     return result;
 }
 
@@ -126,6 +126,6 @@ exports.deleteQueueByObject= async function deleteQueueByObject(propertyObject){
     result = await mongodClient.db("userData").collection("music")
         .deleteOne(propertyObject);
     
-    console.log(`Deleting queue for: ${propertyObject.channelId}`)
+    console.log(`Deleting queue for: ${propertyObject.guildId}`)
 
 }
