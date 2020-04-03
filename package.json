@@ -19,8 +19,8 @@
     "prism-media": "^1.2.1",
     "request": "2.81.0",
     "utf-8-validate": "^5.0.2",
-    "yt-search": "^1.1.2",
-    "ytdl-core": "^2.0.0"
+    "youtube-api-v3-search": "^1.2.1",
+    "ytdl-core": "^2.0.1"
   },
   "engines": {
     "node": "12.16.1"
