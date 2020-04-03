@@ -3,8 +3,10 @@ var mongo = require("../mongodb.js");
 const Discord = require('discord.js');
 
 //youtube imports
-const yts = require('yt-search')
-const ytdl = require('ytdl-core');
+const searchYoutube = require('youtube-api-v3-search');
+const ytdl = require("ytdl-core");
+var auth= process.env.GOOGLE_API;
+
 const fs = require('fs');
 module.exports = {
   name: 'play',
@@ -38,14 +40,24 @@ module.exports = {
 
     /////////////if its a youtube link or not a link and a search term, use yts library
     if((search.indexOf("http")>-1 && search.indexOf("yout")>-1) || search.indexOf("http")<0){
-      const r = await yts(search)
-      url = r.videos[0].url
-      title=r.videos[0].title
+      
+      //options for the youtube query. 
+      //q property is the search term we got from user
+      const options = {
+        q: search,
+        part:'snippet',
+        type:'video',
+        maxResults: 1
+      }
+      const r = await searchYoutube(auth,options) //search youtube
+      url ="https://www.youtube.com/watch?v=" + r.items[0].id.videoId //get url
+      title=r.items[0].snippet.title //get title
+
     }else{
       url=search;
     }
 //////////////////////////////////
-
+    exampleEmbed.setDescription(`Added [${title}]` + "("+url+")" )
     //get queue from db if it doesnt exists
     results = await mongo.findQueueByGuildId(message.guild.id);
     if (!results) {
@@ -54,17 +66,17 @@ module.exports = {
       propertyObject.guildId = message.guild.id
       propertyObject.songs = [url]
 
+      //create queue in db
       await mongo.createQueueByObject(propertyObject)
-      exampleEmbed.setURL(url);
-      exampleEmbed.setDescription(`Added ${title} to queue`);
+
+      //send embed message
       message.channel.send(exampleEmbed);
+
+      //go to playmusic function
       await this.playMusic(message);
       return;
     }else if(results.songs.length==0){    //if queue is empty 
-      exampleEmbed.setDescription(`Added ${title} to queue`);
-      exampleEmbed.setURL(url);
       message.channel.send(exampleEmbed);
-
       //get song queue and add the new song
       addSong = results.songs;
       addSong.push(url) 
@@ -76,8 +88,6 @@ module.exports = {
 
     } else {  //if the queue exists then we add it to queue
       //search youtube for the terms and get url
-      exampleEmbed.setURL(url);
-      exampleEmbed.setDescription(`Added ${title} to queue`);
       message.channel.send(exampleEmbed);
 
       addSong = results.songs;
@@ -115,22 +125,25 @@ module.exports = {
       //send to discord
       exampleEmbed = new Discord.MessageEmbed();
       exampleEmbed.setColor('#0099ff');
-      exampleEmbed.setTitle("Playing");
-
+      exampleEmbed.setTitle("Music")
 
 
       //IF YOUTUBe LINK
 
       if(url.indexOf("yout")>-1){
+
+              //options for the youtube query. 
+      //q property is the url we got from queue
+        title=url;
+
       //parse link
-      const r = await yts(url)
-      title=r.videos[0].title
-      exampleEmbed.setURL(url);
-      exampleEmbed.setDescription(`${title}`)
+      exampleEmbed.setDescription(`Playing [${title}]` + "("+url+")" )
+
+
       message.channel.send(exampleEmbed)
 
      
-      const dispatcher = connection.play(ytdl(url,{ quality:"highestaudio" })).on("finish", async () => {
+      const dispatcher = connection.play(ytdl(url), { filter: 'audioonly' }).on("finish", async () => {
         
         //get the latest song queue
         results = await mongo.findQueueByGuildId(message.guild.id)
@@ -144,7 +157,7 @@ module.exports = {
 
       }).on("error", async error => { message.channel.send("Error youtube")  ///youtube error method
     
-    
+      console.log(error);
       results = await mongo.findQueueByGuildId(message.guild.id)
       songs = results.songs
       //get the url for the first song in queue, whilst removing it from the array
