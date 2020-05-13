@@ -20,7 +20,7 @@
     "request": "2.81.0",
     "utf-8-validate": "^5.0.2",
     "youtube-api-v3-search": "^1.2.1",
-    "ytdl-core": "^2.0.1"
+    "ytdl-core": "^2.1.2"
   },
   "engines": {
     "node": "12.16.1"
