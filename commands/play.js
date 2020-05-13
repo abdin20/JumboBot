@@ -50,6 +50,14 @@ module.exports = {
         maxResults: 1
       }
       const r = await searchYoutube(auth,options) //search youtube
+
+      //check to see if there are results
+      if (typeof r.items[0].id.videoId === 'undefined'){
+      exampleEmbed.setDescription("No results error");
+      message.channel.send(exampleEmbed);
+      return;
+      }
+
       url ="https://www.youtube.com/watch?v=" + r.items[0].id.videoId //get url
       title=r.items[0].snippet.title //get title
 
