@@ -5,7 +5,7 @@ const Discord = require('discord.js');
 //youtube imports
 const searchYoutube = require('youtube-api-v3-search');
 const ytdl = require("ytdl-core");
-var auth= process.env.GOOGLE_API;
+var auth= process.env.GOOGLE_API;		
 
 const fs = require('fs');
 module.exports = {
@@ -73,6 +73,7 @@ module.exports = {
       propertyObject = new Object();
       propertyObject.guildId = message.guild.id
       propertyObject.songs = [url]
+      propertyObject.loop=false; //loop defaults to off
 
       //create queue in db
       await mongo.createQueueByObject(propertyObject)
@@ -157,7 +158,12 @@ module.exports = {
         results = await mongo.findQueueByGuildId(message.guild.id)
         songs = results.songs
         //get the url for the first song in queue, whilst removing it from the array
+
+        //if loop isnt enabled, shift the queue 
+        if(!results.loop){
         url = songs.shift();
+        }
+        
         console.log(`Finished ${title}`)
         //update the queue with the removed first song
         await mongo.updateQueueByGuildId(message.guild.id, { songs: songs })
@@ -190,7 +196,12 @@ module.exports = {
         results = await mongo.findQueueByGuildId(message.guild.id)
         songs = results.songs
         //get the url for the first song in queue, whilst removing it from the array
-        url = songs.shift();
+
+        
+     //if loop isnt enabled, shift the queue 
+     if(!results.loop){
+      url = songs.shift();
+      }
         console.log(`Finished ${url}`)
         //update the queue with the removed first song
         await mongo.updateQueueByGuildId(message.guild.id, { songs: songs })
