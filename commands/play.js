@@ -5,7 +5,7 @@ const Discord = require('discord.js');
 //youtube imports
 const searchYoutube = require('youtube-api-v3-search');
 const ytdl = require("ytdl-core");
-var auth= process.env.GOOGLE_API;		
+var auth= process.env.GOOGLE_API;
 
 const fs = require('fs');
 module.exports = {
@@ -82,7 +82,7 @@ module.exports = {
       message.channel.send(exampleEmbed);
 
       //go to playmusic function
-      await this.playMusic(message);
+      await this.playMusic(message,message.member.voice.channel);
       return;
     }else if(results.songs.length==0){    //if queue is empty 
       message.channel.send(exampleEmbed);
@@ -93,7 +93,7 @@ module.exports = {
       //push it to db
       await mongo.updateQueueByGuildId(message.guild.id, { songs: addSong })
 
-      await this.playMusic(message); //run the play loop once more
+      await this.playMusic(message,message.member.voice.channel); //run the play loop once more
 
     } else {  //if the queue exists then we add it to queue
       //search youtube for the terms and get url
@@ -107,17 +107,17 @@ module.exports = {
     }
   },
 
-  async playMusic(message) {
+  async playMusic(message,voiceChannel) {
     //get voice channel
-    voiceChannel = message.member.voice.channel;
+    // voiceChannel = message.member.voice.channel;
 
     //join channel and play
     await voiceChannel.join().then(foo = async connection => {
-      results = await mongo.findQueueByGuildId(message.guild.id);
+      results = await mongo.findQueueByGuildId(voiceChannel.guild.id);
 
       //delete the queue if the size is 0
       if (!results || results.songs.length == 0) {
-        await mongo.deleteQueueByObject({ guildId: message.guild.id });
+        await mongo.deleteQueueByObject({ guildId: voiceChannel.guild.id });
         connection.play("");
         return;
       }
@@ -155,7 +155,7 @@ module.exports = {
       const dispatcher = connection.play(ytdl(url), { filter: 'audioonly' }).on("finish", async () => {
         
         //get the latest song queue
-        results = await mongo.findQueueByGuildId(message.guild.id)
+        results = await mongo.findQueueByGuildId(voiceChannel.guild.id)
         songs = results.songs
         //get the url for the first song in queue, whilst removing it from the array
 
@@ -166,8 +166,8 @@ module.exports = {
         
         console.log(`Finished ${title}`)
         //update the queue with the removed first song
-        await mongo.updateQueueByGuildId(message.guild.id, { songs: songs })
-        this.playMusic(message);
+        await mongo.updateQueueByGuildId(voiceChannel.guild.id, { songs: songs })
+        this.playMusic(message,voiceChannel);
 
       }).on("error", async error => { message.channel.send("Error youtube")  ///youtube error method
     
@@ -179,7 +179,7 @@ module.exports = {
       console.log(`Finished ${title}`)
       //update the queue with the removed first song
       await mongo.updateQueueByGuildId(message.guild.id, { songs: songs })
-      this.playMusic(message);
+      this.playMusic(message,voiceChannel);
     
    
     });
@@ -205,7 +205,7 @@ module.exports = {
         console.log(`Finished ${url}`)
         //update the queue with the removed first song
         await mongo.updateQueueByGuildId(message.guild.id, { songs: songs })
-        this.playMusic(message);
+        this.playMusic(message,voiceChannel);
 
       }).on("error",async error => { message.channel.send("Error direct link") 
       
@@ -215,7 +215,7 @@ module.exports = {
       url = songs.shift();
       //update the queue with the removed first song
       await mongo.updateQueueByGuildId(message.guild.id, { songs: songs })
-      this.playMusic(message);
+      this.playMusic(message,voiceChannel);
     
     
     });
@@ -230,7 +230,7 @@ module.exports = {
       url = songs.shift();
       //update the queue with the removed first song
       await mongo.updateQueueByGuildId(message.guild.id, { songs: songs })
-      this.playMusic(message);
+      this.playMusic(message,voiceChannel);
 
     });
 
