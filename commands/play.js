@@ -52,7 +52,7 @@ module.exports = {
       const r = await searchYoutube(auth,options) //search youtube
 
       //check to see if there are results
-      if (typeof r.items[0].id.videoId === 'undefined'){
+      if (typeof r.items[0] === 'undefined'){
       exampleEmbed.setDescription("No results error");
       message.channel.send(exampleEmbed);
       return;
