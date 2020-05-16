@@ -3,8 +3,8 @@ const Discord = require('discord.js');
 
 
 module.exports = {
-    name: 'leeg',
-    description: 'asks to play leeg',
+    name: 'tft',
+    description: 'asks to play tft',
     async execute(message, args) {
 
         //display nicely with embeds
@@ -13,9 +13,9 @@ module.exports = {
         exampleEmbed.setTitle("Jumbo");
             //milton, daniel, john h, sen
         msg =`<@199708115434864641> <@320397226012835852> <@165898703410954241> <@326394453675737088>`
-            //jonathan , dtz, abdn
-        msg +=`<@185208328975024128> <@150029401973587969> <@163368896844267521>`
-        msg+=  `WANNA LEEG?`
+            //jonathan 
+        msg +=`<@185208328975024128>`
+        msg+=  `WANNA tft?`
         
         exampleEmbed.setDescription(msg)
         message.channel.send(exampleEmbed);
