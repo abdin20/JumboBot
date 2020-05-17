@@ -51,7 +51,7 @@ module.exports = {
       }
 
       
-       let r = await searchYoutube(auth,options).catch(e =>{
+       let r = await searchYoutube(auth,options).catch(async e =>{
         
         //promise rejected?
         console.log(e);
