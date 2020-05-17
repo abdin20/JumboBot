@@ -5,7 +5,7 @@ const Discord = require('discord.js');
 //youtube imports
 const searchYoutube = require('youtube-api-v3-search');
 const ytdl = require("ytdl-core");
-var auth= process.env.GOOGLE_API;
+var auth= process.env.GOOGLE_API_2;
 
 const fs = require('fs');
 module.exports = {
@@ -50,32 +50,14 @@ module.exports = {
         maxResults: 1
       }
 
-      
-       let r = await searchYoutube(auth,options).catch(async e =>{
+      //search 
+       const r = await searchYoutube(auth,options)
         
-        //promise rejected?
-        console.log(e);
-        exampleEmbed.setDescription( "MAX youtube quota reached?");
-        message.channel.send(exampleEmbed);
-        if (auth==process.env.GOOGLE_API){ //switch between 2 api keys
-            auth=process.env.GOOGLE_API_2;
-        }else{
-          auth=process.env.GOOGLE_API;
-        }
 
-        r =await searchYoutube(auth,options)
 
-       }) 
-
-      //if promise was rejected
-       if (typeof r === 'undefined'){
-        exampleEmbed.setDescription( "youtube error");
-        message.channel.send(exampleEmbed);
-        return;
-       }
      
       //check to see if there are results
-      if (typeof r.items[0] === 'undefined'){
+      if (typeof r.items === 'undefined'){
       exampleEmbed.setDescription("No results error");
       message.channel.send(exampleEmbed);
       return;
