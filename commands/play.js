@@ -49,8 +49,16 @@ module.exports = {
         type:'video',
         maxResults: 1
       }
-      const r = await searchYoutube(auth,options) //search youtube
-
+      try{
+       r = await searchYoutube(auth,options) //search youtube
+      }catch(e){
+        console.log(e);
+        exampleEmbed.setDescription( "MAX youtube quota");
+        message.channel.send(exampleEmbed);
+        auth= process.env.GOOGLE_API_2; //reset api key
+        r = await searchYoutube(auth,options) //search youtube
+      }
+     
       //check to see if there are results
       if (typeof r.items[0] === 'undefined'){
       exampleEmbed.setDescription("No results error");
