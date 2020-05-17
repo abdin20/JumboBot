@@ -49,15 +49,30 @@ module.exports = {
         type:'video',
         maxResults: 1
       }
-      try{
-       r = await searchYoutube(auth,options) //search youtube
-      }catch(e){
+
+      
+       let r = await searchYoutube(auth,options).catch(e =>{
+        
+        //promise rejected?
         console.log(e);
-        exampleEmbed.setDescription( "MAX youtube quota");
+        exampleEmbed.setDescription( "MAX youtube quota reached?");
         message.channel.send(exampleEmbed);
-        auth= process.env.GOOGLE_API_2; //reset api key
-        r = await searchYoutube(auth,options) //search youtube
-      }
+        if (auth==process.env.GOOGLE_API){ //switch between 2 api keys
+            auth=process.env.GOOGLE_API_2;
+        }else{
+          auth=process.env.GOOGLE_API;
+        }
+
+        r =await searchYoutube(auth,options)
+
+       }) 
+
+      //if promise was rejected
+       if (typeof r === 'undefined'){
+        exampleEmbed.setDescription( "youtube error");
+        message.channel.send(exampleEmbed);
+        return;
+       }
      
       //check to see if there are results
       if (typeof r.items[0] === 'undefined'){
