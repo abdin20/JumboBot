@@ -5,7 +5,7 @@ const Discord = require('discord.js');
 //youtube imports
 const searchYoutube = require('youtube-api-v3-search');
 const ytdl = require("ytdl-core");
-var auth= process.env.GOOGLE_API;
+var auth= process.env.GOOGLE_API_2;
 
 const fs = require('fs');
 module.exports = {
@@ -64,6 +64,13 @@ module.exports = {
     }
 
      
+        //check to see if there are results
+        if (typeof r.items === 'undefined'){
+          exampleEmbed.setDescription("No results error");
+          message.channel.send(exampleEmbed);
+          return;
+          }
+
       //check to see if there are results
       if (typeof r.items[0] === 'undefined'){
       exampleEmbed.setDescription("No results error");
