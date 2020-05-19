@@ -36,6 +36,19 @@ module.exports = {
 
     searchUrl = args[0];
 
+    //check for time stamp in video
+    if (searchUrl.indexOf("?t=") > -1) {
+      searchUrl = searchUrl.substring(0, searchUrl.indexOf("?t=")) //edit teh query to get rid of time stamp
+      console.log("time stamp detected");
+    }
+
+    //check for time stamp in video other format
+    if (searchUrl.indexOf("&t=") > -1) {
+      searchUrl = searchUrl.substring(0, searchUrl.indexOf("&t=")) //edit teh query to get rid of time stamp
+      console.log("time stamp detected");
+    }
+
+
     //check if there is an index spot to start from
     if (searchUrl.indexOf("&index=") > -1) {
       index = searchUrl.substring(searchUrl.indexOf("&index=") + 7) //get time stamp part of url
