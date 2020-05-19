@@ -105,10 +105,12 @@ module.exports = {
       }
 
 
-      //check to see if there are results
+      //check to see google api accepted request
       if (typeof r.items === 'undefined') {
         exampleEmbed.setDescription("Quota error");
         message.channel.send(exampleEmbed);
+        auth = process.env.GOOGLE_API_2; //if not reset api key to other account
+        r = await searchYoutube(auth, options)
         return;
       }
 
