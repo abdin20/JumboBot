@@ -5,7 +5,7 @@ const Discord = require('discord.js');
 //youtube imports
 const searchYoutube = require('youtube-api-v3-search');
 const ytdl = require("ytdl-core");
-var auth = process.env.GOOGLE_API;
+var auth = 'AIzaSyCRtU5tnBZAg-kLaMJB307XTxowmMnQSDo';
 
 const fs = require('fs');
 module.exports = {
@@ -14,7 +14,7 @@ module.exports = {
   async execute(message, args) {
     //join the arguements
     search = args.join(" ");
-    
+
     //display nicely with embeds
     exampleEmbed = new Discord.MessageEmbed();
     exampleEmbed.setColor('#0099ff');
@@ -40,22 +40,23 @@ module.exports = {
 
     var queueOptions;
 
+    var timeStamp = "";
     /////////////if its a youtube link or not a link and a search term, use yts library
     if ((search.indexOf("http") > -1 && search.indexOf("yout") > -1) || search.indexOf("http") < 0) {
 
-    
 
+      searchQuery = search;//the query is the search term by default
       //check for time stamp in video
-      if(search.indexOf("?t=")>-1){
-        queueOptions= {seconds:  search.substring(search.indexOf("?t=")+3)}
-        search= search.substring(0,search.indexOf("?t="))
-        console.log("time stamped link found for " + queueOptions.seconds +" seconds");
+      if (search.indexOf("?t=") > -1) {
+        searchQuery = search.substring(0, search.indexOf("?t=")) //edit teh query to get rid of time stamp
+        timeStamp = "?t=" + search.substring(search.indexOf("?t=") + 3) //get time stamp part of url
+        console.log("time stamp detected");
       }
 
-        //options for the youtube query. 
+      //options for the youtube query. 
       //q property is the search term we got from user
       const options = {
-        q: search,
+        q: searchQuery,
         part: 'snippet',
         type: 'video',
         maxResults: 1
@@ -89,7 +90,7 @@ module.exports = {
         return;
       }
 
-      url = "https://www.youtube.com/watch?v=" + r.items[0].id.videoId //get url
+      url = "https://www.youtube.com/watch?v=" + r.items[0].id.videoId + timeStamp//get url
       title = r.items[0].snippet.title //get title
 
     } else {
@@ -113,7 +114,7 @@ module.exports = {
       message.channel.send(exampleEmbed);
 
       //go to playmusic function
-      await this.playMusic(message, message.member.voice.channel, queueOptions);
+      await this.playMusic(message, message.member.voice.channel);
       return;
     } else if (results.songs.length == 0) {    //if queue is empty 
       message.channel.send(exampleEmbed);
@@ -124,7 +125,7 @@ module.exports = {
       //push it to db
       await mongo.updateQueueByGuildId(message.guild.id, { songs: addSong })
 
-      await this.playMusic(message, message.member.voice.channel, queueOptions); //run the play loop once more
+      await this.playMusic(message, message.member.voice.channel); //run the play loop once more
 
     } else {  //if the queue exists then we add it to queue
       //search youtube for the terms and get url
@@ -178,26 +179,26 @@ module.exports = {
         //parse link
         exampleEmbed.setDescription(`Playing [${title}]` + "(" + url + ")")
 
-
         message.channel.send(exampleEmbed)
-        let seek =0;
 
+        //default seek to 0
+        let seek = 0;
 
         //check if options argument was passed through
         if (typeof options != 'undefined') {
           seek = options.seconds; //set seek to options passed through
-
-
-
-
-
-          console.log("seek to " +seek +" seconds")
-        } else {
-          seek = 0;  //else set to 0
+          console.log("seek to " + seek + " seconds")
         }
 
-        let begin=seek+"s";
-        const dispatcher = connection.play(ytdl(url, {begin: begin}), { seek: begin }  ).on("finish", async () => {
+        //check for time stamp in video
+        if (url.indexOf("?t=") > -1) {
+
+          seek = url.substring(url.indexOf("?t=") + 3) //get time stamp part of url
+          url = url.substring(0, url.indexOf("?t=")) //edit teh query to get rid of time stamp
+          console.log("time stamp parsed for " + seek + "s");
+        }
+
+        const dispatcher = connection.play(ytdl(url, { quality: "lowestaudio", begin: seek + "s" }), { seek: seek + "s" }).on("finish", async () => {
 
           //get the latest song queue
           results = await mongo.findQueueByGuildId(voiceChannel.guild.id)
