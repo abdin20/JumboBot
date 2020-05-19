@@ -175,11 +175,12 @@ module.exports = {
         //check if options argument was passed through
         if (typeof options != 'undefined') {
           seek = options.seconds; //set seek to options passed through
+          console.log("seek to " +seek +" seconds")
         } else {
           seek = 0;  //else set to 0
         }
 
-        const dispatcher = connection.play(ytdl(url),[{ filter: 'audioonly'}, seek+"s"]).on("finish", async () => {
+        const dispatcher = connection.play(ytdl(url),[{ filter: 'audioonly'}, {begin: seek+"s"}]).on("finish", async () => {
 
           //get the latest song queue
           results = await mongo.findQueueByGuildId(voiceChannel.guild.id)
