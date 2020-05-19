@@ -108,7 +108,7 @@ module.exports = {
 
                     //when it doesnt have add to array
                     songsArray.push(song);
-                    play.execute(message, [song]) //and add to queue
+                    await play.execute(message, [song]) //and add to queue
                 }
             }
         }
