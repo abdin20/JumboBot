@@ -79,7 +79,7 @@ module.exports = {
       count++;
 
       //if first item in for loop, add the time stamp if there is one 
-      if(m==index-1){
+      if(m == (index-1)){
         songs.push("https://www.youtube.com/watch?v=" + searchResults[m]+timeStamp);
       }else{
         songs.push("https://www.youtube.com/watch?v=" + searchResults[m]);
