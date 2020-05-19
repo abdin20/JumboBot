@@ -20,6 +20,7 @@ module.exports = {
     var index = 0;
     var count = 0;
     var songs = new Array();
+    var timeStamp="";
     //check if arguemnts are there
     if (args.length < 1) {
       exampleEmbed.setDescription("Please enter a playlist link");
@@ -39,12 +40,14 @@ module.exports = {
     //check for time stamp in video
     if (searchUrl.indexOf("?t=") > -1) {
       searchUrl = searchUrl.substring(0, searchUrl.indexOf("?t=")) //edit teh query to get rid of time stamp
+      timeStamp = "?t=" + search.substring(search.indexOf("?t=") + 3) //get time stamp part of url
       console.log("time stamp detected");
     }
 
     //check for time stamp in video other format
     if (searchUrl.indexOf("&t=") > -1) {
       searchUrl = searchUrl.substring(0, searchUrl.indexOf("&t=")) //edit teh query to get rid of time stamp
+      timeStamp = "&t=" + search.substring(search.indexOf("&t=") + 3) //get time stamp part of url
       console.log("time stamp detected");
     }
 
@@ -74,7 +77,14 @@ module.exports = {
     //add the videos to playlist
     for (var m = index - 1; m < searchResults.length; m++) {
       count++;
-      songs.push("https://www.youtube.com/watch?v=" + searchResults[m]);
+
+      //if first item in for loop, add the time stamp if there is one 
+      if(m==index-1){
+        songs.push("https://www.youtube.com/watch?v=" + searchResults[m]+timeStamp);
+      }else{
+        songs.push("https://www.youtube.com/watch?v=" + searchResults[m]);
+      }
+      
     }
 
     results = await mongo.findQueueByGuildId(message.guild.id);
