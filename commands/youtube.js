@@ -40,14 +40,14 @@ module.exports = {
     //check for time stamp in video
     if (searchUrl.indexOf("?t=") > -1) {
       searchUrl = searchUrl.substring(0, searchUrl.indexOf("?t=")) //edit teh query to get rid of time stamp
-      timeStamp = "?t=" + search.substring(search.indexOf("?t=") + 3) //get time stamp part of url
+      timeStamp = "?t=" + searchUrl.substring(searchUrl.indexOf("?t=") + 3) //get time stamp part of url
       console.log("time stamp detected");
     }
 
     //check for time stamp in video other format
     if (searchUrl.indexOf("&t=") > -1) {
       searchUrl = searchUrl.substring(0, searchUrl.indexOf("&t=")) //edit teh query to get rid of time stamp
-      timeStamp = "&t=" + search.substring(search.indexOf("&t=") + 3) //get time stamp part of url
+      timeStamp = "&t=" + searchUrl.substring(searchUrl.indexOf("&t=") + 3) //get time stamp part of url
       console.log("time stamp detected");
     }
 
