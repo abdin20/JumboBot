@@ -52,12 +52,14 @@ module.exports = {
     //check if there is an index spot to start from
     if (searchUrl.indexOf("&index=") > -1) {
       index = searchUrl.substring(searchUrl.indexOf("&index=") + 7) //get time stamp part of url
+      searchUrl = searchUrl.substring(0, searchUrl.indexOf("&index="))
       console.log("index detected : " + index);
     }
 
     //check if there is an index spot to start from other form
     if (searchUrl.indexOf("?index=") > -1) {
       index = searchUrl.substring(searchUrl.indexOf("?index=") + 7) //get time stamp part of url
+      searchUrl = searchUrl.substring(0, searchUrl.indexOf("&index="))
       console.log("index detected : " + index);
     }
 
