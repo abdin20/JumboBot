@@ -5,7 +5,7 @@ const Discord = require('discord.js');
 //youtube imports
 const searchYoutube = require('youtube-api-v3-search');
 const ytdl = require("ytdl-core");
-var auth = 'AIzaSyCRtU5tnBZAg-kLaMJB307XTxowmMnQSDo';
+var auth = process.env.GOOGLE_API;
 
 const fs = require('fs');
 module.exports = {
