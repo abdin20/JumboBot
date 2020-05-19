@@ -180,7 +180,8 @@ module.exports = {
           seek = 0;  //else set to 0
         }
 
-        const dispatcher = connection.play(ytdl(url),[{ filter: 'audioonly'}, {begin: seek+"s"}]).on("finish", async () => {
+        let buffer=seek+"s";
+        const dispatcher = connection.play(ytdl(url,{begin: buffer})).on("finish", async () => {
 
           //get the latest song queue
           results = await mongo.findQueueByGuildId(voiceChannel.guild.id)
