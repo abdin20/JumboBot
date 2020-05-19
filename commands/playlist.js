@@ -51,9 +51,8 @@ module.exports = {
 
         //playing a random song from someones playlist
         if (args[0] === "play") {
-            var songCount = 0;
             var songsArray = new Array();
-            var songCount = 3;
+            var songCount = 2;
             if (typeof message.mentions.users.first() === 'undefined') {
                 exampleEmbed.setDescription("you need to mention someone to play their playlist");
                 message.channel.send(exampleEmbed);
@@ -62,11 +61,13 @@ module.exports = {
 
             //check if number is valid
             if (isNaN(args[2])) {
-                exampleEmbed.setDescription("Added 3 songs from " + message.mentions.users.first().username + "'s playlist");
+                exampleEmbed.setDescription("Added 2 songs from " + message.mentions.users.first().username + "'s playlist");
                 message.channel.send(exampleEmbed);
 
             } else {
                 songCount = args[2];
+                exampleEmbed.setDescription("Added " +songCount+ " songs from " + message.mentions.users.first().username + "'s playlist");
+                message.channel.send(exampleEmbed);
             }
 
             //check if in voice channel
@@ -78,10 +79,10 @@ module.exports = {
 
 
             //check to see if playlist exists
-            results = await mongo.findPlaylistById(message.mentions.users.first().id);
+            searchResults = await mongo.findPlaylistById(message.mentions.users.first().id);
 
             //if not exists thwen send message
-            if (!results) {
+            if (!searchResults) {
                 exampleEmbed.setDescription("This person has no playlist ");
                 message.channel.send(exampleEmbed);
                 return;
@@ -90,24 +91,26 @@ module.exports = {
                 //if exists 
 
                 //check if enough songs in playlist
-                if (results.songs.length < songCount) {
-                    exampleEmbed.setDescription("This person only has " + results.songs.length+ " songs");
+                if (searchResults.songs.length < songCount) {
+                    exampleEmbed.setDescription("This person only has " + searchResults.songs.length+ " songs");
                     message.channel.send(exampleEmbed);
                     return;
                 }
 
+                console.log("adding " + songCount +" songs ")
                 //loop until enough songs have been added
                 for (let m = 0; m < songCount; m++) {
 
                     //get a random song
-                    song = results.songs[Math.floor(Math.random() * results.songs.length)];
+                    song = searchResults.songs[Math.floor(Math.random() * searchResults.songs.length)];
                     //whole the array contains it keep randomizing;
                     while (songsArray.includes(song)) {
-                        song = results.songs[Math.floor(Math.random() * results.songs.length)];
+                        song = searchResults.songs[Math.floor(Math.random() * searchResults.songs.length)];
                     }
 
                     //when it doesnt have add to array
                     songsArray.push(song);
+                    console.log("adding " + song+" to queue")
                     await play.execute(message, [song]) //and add to queue
                 }
             }
