@@ -127,7 +127,7 @@ module.exports = {
     }
   },
 
-  async playMusic(message, voiceChannel,options) {
+  async playMusic(message, voiceChannel, options) {
     //get voice channel
     // voiceChannel = message.member.voice.channel;
 
@@ -171,12 +171,14 @@ module.exports = {
         message.channel.send(exampleEmbed)
         let seek =0;
 
-        
+
         //check if options argument was passed through
-        if (typeof options !== 'undefined') {
+        if (typeof options != 'undefined') {
           seek = options.seconds; //set seek to options passed through
+          console.log("options was defined");
         } else {
           seek = 0;  //else set to 0
+          console.log("options wasnt defined")
         }
 
         const dispatcher = connection.play(ytdl(url), { filter: 'audioonly', begin: seek+"s" }).on("finish", async () => {
