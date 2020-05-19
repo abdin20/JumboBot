@@ -46,8 +46,8 @@ module.exports = {
       //check for time stamp in video
       if(search.indexOf("?t=")>-1){
         search= search.substring(0,search.indexOf("?t="))
-        options={seconds:  search.substring(search.indexOf("?t=")+3)}
-        console.log("time stamped link found for " + options.seconds +" seconds");
+        queueOptions= {seconds:  search.substring(search.indexOf("?t=")+3)}
+        console.log("time stamped link found for " + queueOptions.seconds +" seconds");
       }
 
         //options for the youtube query. 
@@ -111,7 +111,7 @@ module.exports = {
       message.channel.send(exampleEmbed);
 
       //go to playmusic function
-      await this.playMusic(message, message.member.voice.channel, options);
+      await this.playMusic(message, message.member.voice.channel, queueOptions);
       return;
     } else if (results.songs.length == 0) {    //if queue is empty 
       message.channel.send(exampleEmbed);
@@ -122,7 +122,7 @@ module.exports = {
       //push it to db
       await mongo.updateQueueByGuildId(message.guild.id, { songs: addSong })
 
-      await this.playMusic(message, message.member.voice.channel,options); //run the play loop once more
+      await this.playMusic(message, message.member.voice.channel,queueOptions); //run the play loop once more
 
     } else {  //if the queue exists then we add it to queue
       //search youtube for the terms and get url
