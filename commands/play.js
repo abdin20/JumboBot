@@ -75,14 +75,13 @@ module.exports = {
         console.log("playlist link found, new link : " + searchQuery);
       }
 
-      //get video id from youtube link if it exists
-      if (searchQuery.indexOf("?v=") > -1) {
-        searchQuery = searchQuery.substring(searchQuery.indexOf("?v=") + 3) //edit teh query to get rid of time stamp
-        console.log("parsing video id : " + searchQuery);
-      }
 
+      //if its a youtube link we dont need to search for it again
+      if(search.indexOf("http") >=0){
+        url=searchQuery +timeStamp;
+      }else{
 
-      //options for the youtube query. 
+             //options for the youtube query. 
       //q property is the search term we got from user
       const options = {
         q: searchQuery,
@@ -92,18 +91,9 @@ module.exports = {
       }
 
       //search 
-      let flag = false;
       let r = await searchYoutube(auth, options).catch((err) => {
         console.error(err);
-        flag = true;
       });
-
-      if (flag) {
-        auth = process.env.GOOGLE_API_2;
-        r = await searchYoutube(auth, options)
-        flag = false;
-      }
-
 
       //check to see google api accepted request
       if (typeof r.items === 'undefined') {
@@ -123,6 +113,10 @@ module.exports = {
       //adds time stamp to if there was one
       url = "https://www.youtube.com/watch?v=" + r.items[0].id.videoId + timeStamp//get url
       title = r.items[0].snippet.title //get title
+
+
+      }
+ 
 
     } else {
       url = search;

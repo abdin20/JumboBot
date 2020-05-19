@@ -129,3 +129,34 @@ exports.deleteQueueByObject= async function deleteQueueByObject(propertyObject){
     console.log(`Deleting queue for: ${propertyObject.guildId}`)
 
 }
+
+
+///playlist database stuff//////////
+exports.createPlaylistByObject= async function createPlaylistByObject(propertyObject){
+    const newGame = await mongodClient.db("userData").collection("playlists").insertOne(propertyObject);
+    console.log("created playlist for : " +propertyObject.id);
+}
+
+//update playlist
+exports.updatePlaylistById= async function updatePlaylistById(id,propertyObject){
+    result = await mongodClient.db("userData").collection("playlists")
+        .updateOne({ id: id }, { $set: propertyObject });
+
+        console.log("updated playlist for "+id);
+}
+
+//find playlist 
+exports.findPlaylistById= async function findPlaylistById(id){
+    result = await mongodClient.db("userData").collection("playlists").findOne({id:id});
+    return result;
+}
+
+//delete playlists 
+exports.deletePlaylistByObject= async function deletePlaylistByObject(propertyObject){
+    
+    result = await mongodClient.db("userData").collection("playlists")
+        .deleteOne(propertyObject);
+    
+    console.log(`Deleting playlist for: ${propertyObject.id}`)
+
+}
