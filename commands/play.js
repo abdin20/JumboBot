@@ -38,6 +38,8 @@ module.exports = {
     var url = ""
     var title = search
 
+    var queueOptions;
+
     /////////////if its a youtube link or not a link and a search term, use yts library
     if ((search.indexOf("http") > -1 && search.indexOf("yout") > -1) || search.indexOf("http") < 0) {
 
@@ -111,7 +113,7 @@ module.exports = {
       message.channel.send(exampleEmbed);
 
       //go to playmusic function
-      await this.playMusic(message, message.member.voice.channel, queueOptions);
+      await this.playMusic(message, message.member.voice.channel);
       return;
     } else if (results.songs.length == 0) {    //if queue is empty 
       message.channel.send(exampleEmbed);
@@ -122,7 +124,7 @@ module.exports = {
       //push it to db
       await mongo.updateQueueByGuildId(message.guild.id, { songs: addSong })
 
-      await this.playMusic(message, message.member.voice.channel,queueOptions); //run the play loop once more
+      await this.playMusic(message, message.member.voice.channel); //run the play loop once more
 
     } else {  //if the queue exists then we add it to queue
       //search youtube for the terms and get url
