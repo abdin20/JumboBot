@@ -46,12 +46,41 @@ module.exports = {
 
 
       searchQuery = search;//the query is the search term by default
+
+
+
       //check for time stamp in video
       if (search.indexOf("?t=") > -1) {
         searchQuery = search.substring(0, search.indexOf("?t=")) //edit teh query to get rid of time stamp
         timeStamp = "?t=" + search.substring(search.indexOf("?t=") + 3) //get time stamp part of url
         console.log("time stamp detected");
       }
+
+      //check for time stamp in video other format
+      if (search.indexOf("&t=") > -1) {
+        searchQuery = search.substring(0, search.indexOf("&t=")) //edit teh query to get rid of time stamp
+        timeStamp = "?t=" + search.substring(search.indexOf("&t=") + 3) //get time stamp part of url
+        console.log("time stamp detected");
+      }
+
+      //check for playlist link and remove playlist part of link
+      if (searchQuery.indexOf("&list=") > -1) {
+        searchQuery = searchQuery.substring(0, searchQuery.indexOf("&list=")) //edit teh query to get rid of time stamp
+        console.log("playlist link found, new link : " + searchQuery);
+      }
+
+      //check for playlist link and remove playlist part of link other format
+      if (searchQuery.indexOf("?list=") > -1) {
+        searchQuery = searchQuery.substring(0, searchQuery.indexOf("?list=")) //edit teh query to get rid of time stamp
+        console.log("playlist link found, new link : " + searchQuery);
+      }
+
+      //get video id from youtube link if it exists
+      if (searchQuery.indexOf("?v=") > -1) {
+        searchQuery = searchQuery.substring(searchQuery.indexOf("?v=") + 3) //edit teh query to get rid of time stamp
+        console.log("parsing video id : " + searchQuery);
+      }
+
 
       //options for the youtube query. 
       //q property is the search term we got from user
@@ -90,6 +119,7 @@ module.exports = {
         return;
       }
 
+      //adds time stamp to if there was one
       url = "https://www.youtube.com/watch?v=" + r.items[0].id.videoId + timeStamp//get url
       title = r.items[0].snippet.title //get title
 
@@ -197,6 +227,18 @@ module.exports = {
           url = url.substring(0, url.indexOf("?t=")) //edit teh query to get rid of time stamp
           console.log("time stamp parsed for " + seek + "s");
         }
+
+        //check for time stamp in video
+        if (url.indexOf("?t=") > -1) {
+
+          seek = url.substring(url.indexOf("?t=") + 3) //get time stamp part of url
+          url = url.substring(0, url.indexOf("?t=")) //edit teh query to get rid of time stamp
+          console.log("time stamp parsed for " + seek + "s");
+          console.log("new url"+ url)
+        }
+
+
+
 
         const dispatcher = connection.play(ytdl(url, { quality: "lowestaudio", begin: seek + "s" }), { seek: seek + "s" }).on("finish", async () => {
 
