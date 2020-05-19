@@ -14,7 +14,7 @@ module.exports = {
   async execute(message, args) {
     //join the arguements
     search = args.join(" ");
-
+    
     //display nicely with embeds
     exampleEmbed = new Discord.MessageEmbed();
     exampleEmbed.setColor('#0099ff');
@@ -41,7 +41,16 @@ module.exports = {
     /////////////if its a youtube link or not a link and a search term, use yts library
     if ((search.indexOf("http") > -1 && search.indexOf("yout") > -1) || search.indexOf("http") < 0) {
 
-      //options for the youtube query. 
+    
+
+      //check for time stamp in video
+      if(search.indexOf("?t=")>-1){
+        search= search.substring(0,search.indexOf("?t="))
+        options={seconds:  search.substring(search.indexOf("?t=")+3)}
+        console.log("time stamped link found for " + options.seconds +" seconds");
+      }
+
+        //options for the youtube query. 
       //q property is the search term we got from user
       const options = {
         q: search,
@@ -102,7 +111,7 @@ module.exports = {
       message.channel.send(exampleEmbed);
 
       //go to playmusic function
-      await this.playMusic(message, message.member.voice.channel);
+      await this.playMusic(message, message.member.voice.channel, options);
       return;
     } else if (results.songs.length == 0) {    //if queue is empty 
       message.channel.send(exampleEmbed);
@@ -113,7 +122,7 @@ module.exports = {
       //push it to db
       await mongo.updateQueueByGuildId(message.guild.id, { songs: addSong })
 
-      await this.playMusic(message, message.member.voice.channel); //run the play loop once more
+      await this.playMusic(message, message.member.voice.channel,options); //run the play loop once more
 
     } else {  //if the queue exists then we add it to queue
       //search youtube for the terms and get url
@@ -175,13 +184,18 @@ module.exports = {
         //check if options argument was passed through
         if (typeof options != 'undefined') {
           seek = options.seconds; //set seek to options passed through
+
+
+
+
+
           console.log("seek to " +seek +" seconds")
         } else {
           seek = 0;  //else set to 0
         }
 
         let begin=seek+"s";
-        const dispatcher = connection.play(ytdl(url, {begin: begin}),{ seek: begin }  ).on("finish", async () => {
+        const dispatcher = connection.play(ytdl(url, {begin: begin}), { seek: begin }  ).on("finish", async () => {
 
           //get the latest song queue
           results = await mongo.findQueueByGuildId(voiceChannel.guild.id)
