@@ -50,7 +50,7 @@ module.exports = {
             exampleEmbed.setDescription("Seeked to  "+ args[0] +" seconds ");
             message.channel.send(exampleEmbed);
             //update to db and play music
-            play.playMusic(message,message.member.voice.channel,{seconds:args[0]});
+            play.playMusic(message,message.member.voice.channel, {seconds:args[0]});
         }
 
 
