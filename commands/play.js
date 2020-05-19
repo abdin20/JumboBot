@@ -111,7 +111,6 @@ module.exports = {
         message.channel.send(exampleEmbed);
         auth = process.env.GOOGLE_API_2; //if not reset api key to other account
         r = await searchYoutube(auth, options)
-        return;
       }
 
       //check to see if there are results
