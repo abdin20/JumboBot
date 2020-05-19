@@ -39,15 +39,15 @@ module.exports = {
 
     //check for time stamp in video
     if (searchUrl.indexOf("?t=") > -1) {
-      searchUrl = searchUrl.substring(0, searchUrl.indexOf("?t=")) //edit teh query to get rid of time stamp
       timeStamp = "?t=" + searchUrl.substring(searchUrl.indexOf("?t=") + 3) //get time stamp part of url
+      searchUrl = searchUrl.substring(0, searchUrl.indexOf("?t=")) //edit teh query to get rid of time stamp
       console.log("time stamp detected");
     }
 
     //check for time stamp in video other format
     if (searchUrl.indexOf("&t=") > -1) {
-      searchUrl = searchUrl.substring(0, searchUrl.indexOf("&t=")) //edit teh query to get rid of time stamp
       timeStamp = "&t=" + searchUrl.substring(searchUrl.indexOf("&t=") + 3) //get time stamp part of url
+      searchUrl = searchUrl.substring(0, searchUrl.indexOf("&t=")) //edit teh query to get rid of time stamp
       console.log("time stamp detected");
     }
 
@@ -67,8 +67,8 @@ module.exports = {
     }
 
     //get vid ids for playlist
+    console.log("running playlist search on " + searchUrl)
     searchResults = await vid_data.get_playlist_videos(searchUrl)
-
     if (!searchResults) {
       exampleEmbed.setDescription("error with playlists");
       message.channel.send(exampleEmbed);
