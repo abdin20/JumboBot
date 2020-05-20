@@ -70,6 +70,10 @@ module.exports = {
                 result = await lyrics.get("atoz", workingTitle).catch((err) => {
                     console.error(err);
                   });
+
+                  if(result.result.length>0 || result.result!=null){
+                      break;
+                  }
                   workingTitleArray.pop();
            
             }
