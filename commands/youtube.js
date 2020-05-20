@@ -20,7 +20,8 @@ module.exports = {
     var index = 0;
     var count = 0;
     var songs = new Array();
-    var timeStamp="";
+    var timeStamp = "";
+    var playlistId = "";
     //check if arguemnts are there
     if (args.length < 1) {
       exampleEmbed.setDescription("Please enter a playlist link");
@@ -66,6 +67,23 @@ module.exports = {
       console.log("index detected : " + index);
     }
 
+    //check for time stamp in video other format
+    if (searchUrl.indexOf("&list=") > -1) {
+      playlistId = searchUrl.substring(searchUrl.indexOf("&list=") + 6) //get time stamp part of url
+      console.log("list id detected");
+    } //check for time stamp in video other format
+    else if (searchUrl.indexOf("?list=") > -1) {
+      playlistId = searchUrl.substring(searchUrl.indexOf("?list=") + 6) //get time stamp part of url
+      console.log("list id detected");
+    }else{
+      exampleEmbed.setDescription("error with playlists id");
+      message.channel.send(exampleEmbed);
+      return;
+    }
+
+    searchUrl="https://www.youtube.com/playlist?list="+playlistId;
+
+
     //get vid ids for playlist
     console.log("running playlist search on " + searchUrl)
     searchResults = await vid_data.get_playlist_videos(searchUrl)
@@ -79,12 +97,12 @@ module.exports = {
       count++;
 
       //if first item in for loop, add the time stamp if there is one 
-      if(m == (index-1)){
-        songs.push("https://www.youtube.com/watch?v=" + searchResults[m]+timeStamp);
-      }else{
+      if (m == (index - 1)) {
+        songs.push("https://www.youtube.com/watch?v=" + searchResults[m] + timeStamp);
+      } else {
         songs.push("https://www.youtube.com/watch?v=" + searchResults[m]);
       }
-      
+
     }
 
     results = await mongo.findQueueByGuildId(message.guild.id);
