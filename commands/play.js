@@ -5,7 +5,7 @@ const Discord = require('discord.js');
 //youtube imports
 const searchYoutube = require('youtube-api-v3-search');
 const ytdl = require("ytdl-core");
-var auth = process.env.GOOGLE_API;
+var auth = process.env.GOOGLE_API_2;
 
 const fs = require('fs');
 module.exports = {
@@ -99,7 +99,7 @@ module.exports = {
       if (typeof r.items === 'undefined') {
         exampleEmbed.setDescription("Quota error");
         message.channel.send(exampleEmbed);
-        auth = process.env.GOOGLE_API_2; //if not reset api key to other account
+        auth = process.env.GOOGLE_API; //if not reset api key to other account
         r = await searchYoutube(auth, options)
       }
 
@@ -197,9 +197,10 @@ module.exports = {
       //IF YOUTUBe LINK
       if (url.indexOf("yout") > -1) {
 
-        //options for the youtube query. 
-        //q property is the url we got from queue
-        title = url;
+        //get data from ytdl libarary
+        data = await ytdl.getInfo(url)
+
+        title =data.title;
 
         //parse link
         exampleEmbed.setDescription(`Playing [${title}]` + "(" + url + ")")
