@@ -71,7 +71,7 @@ module.exports = {
                     console.error(err);
                   });
 
-                  if(result.result.length>0 || result.result!=null){
+                  if(result.result!=null || result.result.length>0){
                       break;
                   }
                   workingTitleArray.pop();
