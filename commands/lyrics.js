@@ -53,16 +53,7 @@ module.exports = {
 
 
             //get lyrics
-            var lyrics = await scraper.getLyric(title).catch((err) => {
-                console.error(err);
-              });
-
-              //if no lyrics  found exit 
-            if(!lyrics){
-                exampleEmbed.setDescription("no lyrics found")
-                message.channel.send(exampleEmbed);
-                return;
-            }
+            var lyrics = await scraper.getLyric(title)
 
             //build message to send
             var msg = "";
