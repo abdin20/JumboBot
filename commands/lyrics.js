@@ -56,7 +56,10 @@ module.exports = {
 
             //get lyrics
             console.log("Executing lyric search for " + title);
-            var result = await lyrics.get("atoz", title);
+            var result = await lyrics.get("atoz", title).catch((err) => {
+                console.error(err);
+              });
+      
             //split title into array of words
             workingTitleArray=title.split(" ");
            
@@ -65,7 +68,10 @@ module.exports = {
                 workingTitleArray.pop();
                 workingTitle=workingTitleArray.join(" "); 
                 console.log("searching lyrics for " + workingTitle)   
-                result = await lyrics.get("atoz", workingTitle); 
+                result = await lyrics.get("atoz", workingTitle).catch((err) => {
+                    console.error(err);
+                  });
+           
             }
             
             arrayLyrics= result.result.split("\n");
