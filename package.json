@@ -17,6 +17,7 @@
     "ffmpeg-static": "^4.2.2",
     "mongodb": "^3.5.7",
     "ms-rest-azure": "^3.0.0",
+    "node-fetch": "^2.6.0",
     "prism-media": "^1.2.2",
     "slyrics": "^0.1.42",
     "utf-8-validate": "^5.0.2",
