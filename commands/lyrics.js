@@ -64,7 +64,7 @@ module.exports = {
             workingTitleArray=title.split(" ");
            
             //this removes extra words in the search
-            while(!result.result){
+            while(!result){
                 workingTitleArray.pop();
                 workingTitle=workingTitleArray.join(" "); 
                 console.log("searching lyrics for " + workingTitle)   
