@@ -2,7 +2,8 @@
 const Discord = require('discord.js');
 var mongo = require("../mongodb.js");
 const ytdl = require("ytdl-core");
-const scraper = require("azlyrics-scraper");
+const Lyrics = require('slyrics')
+const lyrics = new Lyrics();
 
 
 module.exports = {
@@ -53,15 +54,17 @@ module.exports = {
 
 
             //get lyrics
-            var lyrics = await scraper.getLyric(title)
+            const result = await lyrics.get("melon", title);
+            arrayLyrics= result.result.split("\n");
+           
 
             //build message to send
             var msg = "";
             var count = 0;
             // go through array of lyrics
-            for (let m = 0; m < lyrics.length; m++) {
+            for (let m = 0; m < arrayLyrics.length; m++) {
                 count++;
-                msg += lyrics[m] + "\n";
+                msg += arrayLyrics[m] + "\n";
 
                 //if the count is 25 send the message
                 if (count == 25) {
