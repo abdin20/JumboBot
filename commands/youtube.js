@@ -47,7 +47,7 @@ module.exports = {
 
     //check for time stamp in video other format
     if (searchUrl.indexOf("&t=") > -1) {
-      timeStamp = "&t=" + searchUrl.substring(searchUrl.indexOf("&t=") + 3) //get time stamp part of url
+      timeStamp = "?t=" + searchUrl.substring(searchUrl.indexOf("&t=") + 3) //get time stamp part of url
       searchUrl = searchUrl.substring(0, searchUrl.indexOf("&t=")) //edit teh query to get rid of time stamp
       console.log("time stamp detected");
     }
