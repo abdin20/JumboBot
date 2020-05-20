@@ -44,7 +44,6 @@ module.exports = {
 
 
                 title = data.title;
-                console.log("Executing lyric search for " + title);
                 exampleEmbed.setTitle(title);
             } else { //if not 
                 exampleEmbed.setDescription("only works for youtube songs")
@@ -53,8 +52,22 @@ module.exports = {
             }
 
 
+
+
             //get lyrics
-            const result = await lyrics.get("melon", title);
+            console.log("Executing lyric search for " + title);
+            var result = await lyrics.get("atoz", title);
+            //split title into array of words
+            workingTitleArray=title.split(" ");
+           
+            //this removes extra words in the search
+            while(!result.result){
+                workingTitleArray.pop();
+                workingTitle=workingTitleArray.join(" "); 
+                console.log("searching lyrics for " + workingTitle)   
+                result = await lyrics.get("atoz", workingTitle); 
+            }
+            
             arrayLyrics= result.result.split("\n");
            
 
@@ -64,10 +77,14 @@ module.exports = {
             // go through array of lyrics
             for (let m = 0; m < arrayLyrics.length; m++) {
                 count++;
-                msg += arrayLyrics[m] + "\n";
+
+                if(arrayLyrics[m]!=="\n"){
+                    msg += arrayLyrics[m] +"\n";
+                }
+               
 
                 //if the count is 25 send the message
-                if (count == 25) {
+                if (count == 60) {
                     exampleEmbed.setDescription(msg);
                     message.channel.send(exampleEmbed);
                     msg = "";
