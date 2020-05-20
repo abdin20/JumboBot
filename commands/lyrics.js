@@ -62,15 +62,15 @@ module.exports = {
       
             //split title into array of words
             workingTitleArray=title.split(" ");
-           
+            workingTitleArray.pop();
             //this removes extra words in the search
             while(!result.result && workingTitleArray.length>0){
-                workingTitleArray.pop();
                 workingTitle=workingTitleArray.join(" "); 
                 console.log("searching lyrics for " + workingTitle)   
                 result = await lyrics.get("atoz", workingTitle).catch((err) => {
                     console.error(err);
                   });
+                  workingTitleArray.pop();
            
             }
             
