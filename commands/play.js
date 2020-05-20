@@ -77,46 +77,51 @@ module.exports = {
 
 
       //if its a youtube link we dont need to search for it again
-      if(search.indexOf("http") >=0){
-        url=searchQuery +timeStamp;
-      }else{
+      if (search.indexOf("http") >= 0) {
+        url = searchQuery + timeStamp;
 
-             //options for the youtube query. 
-      //q property is the search term we got from user
-      const options = {
-        q: searchQuery,
-        part: 'snippet',
-        type: 'video',
-        maxResults: 1
+        //get data from ytdl libarary
+        data = await ytdl.getInfo(searchQuery)
+        title = data.title;
+
+      } else {
+
+        //options for the youtube query. 
+        //q property is the search term we got from user
+        const options = {
+          q: searchQuery,
+          part: 'snippet',
+          type: 'video',
+          maxResults: 1
+        }
+
+        //search 
+        let r = await searchYoutube(auth, options).catch((err) => {
+          console.error(err);
+        });
+
+        //check to see google api accepted request
+        if (typeof r.items === 'undefined') {
+          exampleEmbed.setDescription("Quota error");
+          message.channel.send(exampleEmbed);
+          auth = process.env.GOOGLE_API; //if not reset api key to other account
+          r = await searchYoutube(auth, options)
+        }
+
+        //check to see if there are results
+        if (typeof r.items[0] === 'undefined') {
+          exampleEmbed.setDescription("No results error");
+          message.channel.send(exampleEmbed);
+          return;
+        }
+
+        //adds time stamp to if there was one
+        url = "https://www.youtube.com/watch?v=" + r.items[0].id.videoId + timeStamp//get url
+        title = r.items[0].snippet.title //get title
+
+
       }
 
-      //search 
-      let r = await searchYoutube(auth, options).catch((err) => {
-        console.error(err);
-      });
-
-      //check to see google api accepted request
-      if (typeof r.items === 'undefined') {
-        exampleEmbed.setDescription("Quota error");
-        message.channel.send(exampleEmbed);
-        auth = process.env.GOOGLE_API; //if not reset api key to other account
-        r = await searchYoutube(auth, options)
-      }
-
-      //check to see if there are results
-      if (typeof r.items[0] === 'undefined') {
-        exampleEmbed.setDescription("No results error");
-        message.channel.send(exampleEmbed);
-        return;
-      }
-
-      //adds time stamp to if there was one
-      url = "https://www.youtube.com/watch?v=" + r.items[0].id.videoId + timeStamp//get url
-      title = r.items[0].snippet.title //get title
-
-
-      }
- 
 
     } else {
       url = search;
@@ -200,7 +205,7 @@ module.exports = {
         //get data from ytdl libarary
         data = await ytdl.getInfo(url)
 
-        title =data.title;
+        title = data.title;
 
         //parse link
         exampleEmbed.setDescription(`Playing [${title}]` + "(" + url + ")")
@@ -230,7 +235,7 @@ module.exports = {
           seek = url.substring(url.indexOf("?t=") + 3) //get time stamp part of url
           url = url.substring(0, url.indexOf("?t=")) //edit teh query to get rid of time stamp
           console.log("time stamp parsed for " + seek + "s");
-          console.log("new url"+ url)
+          console.log("new url" + url)
         }
 
 
