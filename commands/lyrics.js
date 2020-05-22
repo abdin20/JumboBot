@@ -64,20 +64,23 @@ module.exports = {
             workingTitleArray=title.split(" ");
             workingTitleArray.pop();
             //this removes extra words in the search
-            while(!result.result && workingTitleArray.length>0){
+            while(result.result!==null && workingTitleArray.length>0){
                 workingTitle=workingTitleArray.join(" "); 
                 console.log("searching lyrics for " + workingTitle)   
                 result = await lyrics.get("atoz", workingTitle).catch((err) => {
                     console.error(err);
                   });
 
-                  if(result.result!==null){
-                      break;
-                  }
                   workingTitleArray.pop();
            
             }
             
+            //if no lyrics found
+            if(result.result===null){
+                exampleEmbed.setDescription("No lyrics found");
+                message.channel.send(exampleEmbed);
+                return;
+            }
             arrayLyrics= result.result.split("\n");
            
 
