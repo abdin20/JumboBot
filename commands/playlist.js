@@ -52,22 +52,11 @@ module.exports = {
         //playing a random song from someones playlist
         if (args[0] === "play") {
             var songsArray = new Array();
-            var songCount = 2;
+            var songCount = 0;
             if (typeof message.mentions.users.first() === 'undefined') {
                 exampleEmbed.setDescription("you need to mention someone to play their playlist");
                 message.channel.send(exampleEmbed);
                 return;
-            }
-
-            //check if number is valid
-            if (isNaN(args[2])) {
-                exampleEmbed.setDescription("Added 2 songs from " + message.mentions.users.first().username + "'s playlist");
-                message.channel.send(exampleEmbed);
-
-            } else {
-                songCount = args[2];
-                exampleEmbed.setDescription("Added " +songCount+ " songs from " + message.mentions.users.first().username + "'s playlist");
-                message.channel.send(exampleEmbed);
             }
 
             //check if in voice channel
@@ -77,9 +66,25 @@ module.exports = {
                 return;
             }
 
+            //check if number is valid
+            if (isNaN(args[2])) {
+                exampleEmbed.setDescription("Added all songs from " + message.mentions.users.first().username + "'s playlist");
+                message.channel.send(exampleEmbed);
+                
+
+            } else {
+                songCount = args[2];
+                exampleEmbed.setDescription("Added " + songCount + " songs from " + message.mentions.users.first().username + "'s playlist");
+                message.channel.send(exampleEmbed);
+            }
+
+
+
 
             //check to see if playlist exists
             searchResults = await mongo.findPlaylistById(message.mentions.users.first().id);
+            
+            
 
             //if not exists thwen send message
             if (!searchResults) {
@@ -88,16 +93,18 @@ module.exports = {
                 return;
             } else {
 
-                //if exists 
-
+                //if no song count was defined
+                if(songCount===0){
+                    songCount=searchResults.songs.length;
+                }
                 //check if enough songs in playlist
                 if (searchResults.songs.length < songCount) {
-                    exampleEmbed.setDescription("This person only has " + searchResults.songs.length+ " songs");
+                    exampleEmbed.setDescription("This person only has " + searchResults.songs.length + " songs");
                     message.channel.send(exampleEmbed);
                     return;
                 }
 
-                console.log("adding " + songCount +" songs ")
+                console.log("adding " + songCount + " songs ")
                 //loop until enough songs have been added
                 for (let m = 0; m < songCount; m++) {
 
@@ -110,7 +117,7 @@ module.exports = {
 
                     //when it doesnt have add to array
                     songsArray.push(song);
-                    console.log("adding " + song+" to queue")
+                    console.log("adding " + song + " to queue")
                     await play.execute(message, [song]) //and add to queue
                 }
             }
