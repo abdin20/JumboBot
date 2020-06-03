@@ -9,6 +9,7 @@
   "dependencies": {
     "@azure/cognitiveservices-imagesearch": "^3.0.0",
     "@discordjs/opus": "^0.3.2",
+    "azlyrics-scraper": "^1.0.5",
     "azure-cognitiveservices-search": "^1.1.0-preview",
     "bufferutil": "^4.0.1",
     "discord-command-parser": "^1.4.3",
@@ -17,7 +18,6 @@
     "mongodb": "^3.5.7",
     "ms-rest-azure": "^3.0.0",
     "prism-media": "^1.2.2",
-    "slyrics": "^0.1.42",
     "utf-8-validate": "^5.0.2",
     "vid_data": "^1.0.0",
     "youtube-api-v3-search": "^1.2.1",

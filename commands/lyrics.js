@@ -2,8 +2,7 @@
 const Discord = require('discord.js');
 var mongo = require("../mongodb.js");
 const ytdl = require("ytdl-core");
-const Lyrics = require('slyrics')
-const lyrics = new Lyrics();
+const scraper = require("azlyrics-scraper");
 
 
 module.exports = {
@@ -56,7 +55,7 @@ module.exports = {
 
             //get lyrics
             console.log("Executing lyric search for " + title);
-            var result = await lyrics.get("atoz", title).catch((err) => {
+            var result = await scraper.getLyric(title).catch((err) => {
                 console.error(err);
               });
       
@@ -64,10 +63,10 @@ module.exports = {
             workingTitleArray=title.split(" ");
             workingTitleArray.pop();
             //this removes extra words in the search
-            while(result.result===null && workingTitleArray.length>0){
+            while(result===undefined && workingTitleArray.length>0){
                 workingTitle=workingTitleArray.join(" "); 
                 console.log("searching lyrics for " + workingTitle)   
-                result = await lyrics.get("atoz", workingTitle).catch((err) => {
+                result = await scraper.getLyric(workingTitle).catch((err) => {
                     console.error(err);
                   });
 
@@ -76,12 +75,13 @@ module.exports = {
             }
             
             //if no lyrics found
-            if(result.result===null){
+            if(result===undefined){
                 exampleEmbed.setDescription("No lyrics found");
                 message.channel.send(exampleEmbed);
                 return;
             }
-            arrayLyrics= result.result.split("\n");
+ 
+            arrayLyrics= result;
            
 
             //build message to send
