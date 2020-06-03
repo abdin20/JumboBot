@@ -18,6 +18,7 @@
     "mongodb": "^3.5.7",
     "ms-rest-azure": "^3.0.0",
     "prism-media": "^1.2.2",
+    "request": "^2.88.2",
     "utf-8-validate": "^5.0.2",
     "vid_data": "^1.0.0",
     "youtube-api-v3-search": "^1.2.1",
