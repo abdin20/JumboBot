@@ -230,7 +230,7 @@ module.exports = {
         }
 
         //check for time stamp in video
-        if (url.indexOf("?t=") > -1) {
+        if (url.indexOf("?t=") > -1) { 
 
           seek = url.substring(url.indexOf("?t=") + 3) //get time stamp part of url
           url = url.substring(0, url.indexOf("?t=")) //edit teh query to get rid of time stamp
@@ -241,7 +241,7 @@ module.exports = {
 
 
 
-        const dispatcher = connection.play(ytdl(url, { quality: "lowestaudio", begin: seek + "s" }), { seek: seek + "s" }).on("finish", async () => {
+        const dispatcher = connection.play(ytdl(url, { quality: "lowestaudio", begin: seek }), { seek: seek }).on("finish", async () => {
 
           //get the latest song queue
           results = await mongo.findQueueByGuildId(voiceChannel.guild.id)
