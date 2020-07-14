@@ -23,7 +23,7 @@
     "utf-8-validate": "^5.0.2",
     "vid_data": "^1.0.0",
     "youtube-api-v3-search": "^1.2.1",
-    "ytdl-core": "^2.1.7"
+    "ytdl-core": "^3.1.2"
   },
   "engines": {
     "node": "12.18.2"
