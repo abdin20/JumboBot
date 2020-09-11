@@ -82,7 +82,7 @@ module.exports = {
 
         //get data from ytdl libarary
         data = await ytdl.getInfo(searchQuery)
-        title = data.title;
+        title = data.videoDetails.title;
 
       } else {
 
@@ -205,7 +205,7 @@ module.exports = {
         //get data from ytdl libarary
         data = await ytdl.getInfo(url)
 
-        title = data.title;
+        title = data.videoDetails.title;
 
         //parse link
         exampleEmbed.setDescription(`Playing [${title}]` + "(" + url + ")")
