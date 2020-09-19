@@ -6,13 +6,26 @@ var play = require("./play.js");
 
 module.exports = {
     name: 'playlist',
-    description: '<args> possible args "add <url/term>", "play <user> <num of songs>", <view> <user>, <remove> <song>',
+    description: '<args> possible args "playlist_name add <url/term>", "playlist_name play <user> <num of songs>",playlist_name view <user>,playlist_name remove <song>',
     async execute(message, args) {
         //display nicely with embeds
         exampleEmbed = new Discord.MessageEmbed();
         exampleEmbed.setColor('#0099ff');
         exampleEmbed.setTitle("Playlist");
 
+        var playlistName;
+        //check for playlist name
+        if (typeof args[0] === 'undefined') {
+            exampleEmbed.setDescription("you need to enter a playlist name");
+                message.channel.send(exampleEmbed);
+                return; //leave 
+                
+        }else{
+            playlistName=args[0]; //get play
+                args.shift(); //shift the array
+        }
+
+        
         //adding to playlist
         if (args[0] === "add") {
             if (typeof args[1] === 'undefined') { //check for url/term to add 
@@ -26,11 +39,11 @@ module.exports = {
             console.log("adding " + song + " to playlist");
 
             //check to see if user has playlist, if not then make one
-            results = await mongo.findPlaylistById(message.author.id);
+            results = await mongo.findPlaylistById({id:message.author.id,name:playlistName});
 
             //make playlist
             if (!results) {
-                playlist = { id: message.author.id, songs: [song] }
+                playlist = { id: message.author.id, name:playlistName, songs: [song] }
 
                 //update db
                 await mongo.createPlaylistByObject(playlist);
@@ -40,11 +53,11 @@ module.exports = {
                 songs = results.songs; //get the playlist
                 songs.push(song)  //append it
                 //update db
-                await mongo.updatePlaylistById(message.author.id, { songs: songs })
+                await mongo.updatePlaylistById({ id:message.author.id, name:playlistName }, { songs: songs })
             }
 
             //send confirmation 
-            exampleEmbed.setDescription("Added " + song + " to your playlist");
+            exampleEmbed.setDescription("Added " + song + " to your " +playlistName+ " playlist");
             message.channel.send(exampleEmbed);
         }
 
@@ -53,6 +66,7 @@ module.exports = {
         if (args[0] === "play") {
             var songsArray = new Array();
             var songCount = 0;
+            
             if (typeof message.mentions.users.first() === 'undefined') {
                 exampleEmbed.setDescription("you need to mention someone to play their playlist");
                 message.channel.send(exampleEmbed);
@@ -82,7 +96,7 @@ module.exports = {
 
 
             //check to see if playlist exists
-            searchResults = await mongo.findPlaylistById(message.mentions.users.first().id);
+            searchResults = await mongo.findPlaylistById({id:message.mentions.users.first().id, name:playlistName});
             
             
 
@@ -137,11 +151,11 @@ module.exports = {
 
             //find playlist
             //check to see if playlist exists
-            results = await mongo.findPlaylistById(id);
+            results = await mongo.findPlaylistById({id:id, name:playlistName});
 
             //if not exists then send message
             if (!results) {
-                exampleEmbed.setDescription(username + " has no playlist ");
+                exampleEmbed.setDescription(username + " has no playlist called " + playlistName);
                 message.channel.send(exampleEmbed);
                 return;
             } else {
@@ -149,7 +163,7 @@ module.exports = {
                 for (let m = 0; m < results.songs.length; m++) {
                     exampleEmbed.addField(m + 1, results.songs[m], true); //add fields for each song
                 }
-
+                exampleEmbed.setTitle("Playlist: " +playlistName +" by "+ username);
                 message.channel.send(exampleEmbed); ///send to  channel
 
             }
@@ -163,11 +177,11 @@ module.exports = {
             }
 
             //check to see if playlist exists
-            results = await mongo.findPlaylistById(message.author.id);
+            results = await mongo.findPlaylistById( {id:message.author.id, name: playlistName});
 
             //if not exists thwen send message
             if (!results) {
-                exampleEmbed.setDescription("You have no playlist ");
+                exampleEmbed.setDescription("You have no playlist called " +playlistName);
                 message.channel.send(exampleEmbed);
                 return;
             } else {
@@ -188,8 +202,9 @@ module.exports = {
                     }
                 }
                 console.log("New song array " + newSongs)
+
                 //update db
-                await mongo.updatePlaylistById(message.author.id, { songs: newSongs })
+                await mongo.updatePlaylistById( {id:message.author.id,name:playlistName}, { songs: newSongs })
 
 
             }

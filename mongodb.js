@@ -134,20 +134,20 @@ exports.deleteQueueByObject= async function deleteQueueByObject(propertyObject){
 ///playlist database stuff//////////
 exports.createPlaylistByObject= async function createPlaylistByObject(propertyObject){
     const newGame = await mongodClient.db("userData").collection("playlists").insertOne(propertyObject);
-    console.log("created playlist for : " +propertyObject.id);
+    console.log("created "+propertyObject.name +" playlist for : " +propertyObject.id);
 }
 
 //update playlist
-exports.updatePlaylistById= async function updatePlaylistById(id,propertyObject){
+exports.updatePlaylistById= async function updatePlaylistById(playlistInfo,propertyObject){
     result = await mongodClient.db("userData").collection("playlists")
-        .updateOne({ id: id }, { $set: propertyObject });
+        .updateOne({ id: playlistInfo.id, name:playlistInfo.name}, { $set: propertyObject });
 
-        console.log("updated playlist for "+id);
+        console.log("updated playlist for "+playlistInfo.id +"name: " + playlistInfo.name);
 }
 
 //find playlist 
-exports.findPlaylistById= async function findPlaylistById(id){
-    result = await mongodClient.db("userData").collection("playlists").findOne({id:id});
+exports.findPlaylistById= async function findPlaylistById(playlistInfo){
+    result = await mongodClient.db("userData").collection("playlists").findOne({id:playlistInfo.id, name:playlistInfo.name});
     return result;
 }
 
