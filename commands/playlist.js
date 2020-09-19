@@ -66,7 +66,7 @@ module.exports = {
         if (args[0] === "play") {
             var songsArray = new Array();
             var songCount = 0;
-            
+
             if (typeof message.mentions.users.first() === 'undefined') {
                 exampleEmbed.setDescription("you need to mention someone to play their playlist");
                 message.channel.send(exampleEmbed);
@@ -82,13 +82,13 @@ module.exports = {
 
             //check if number is valid
             if (isNaN(args[2])) {
-                exampleEmbed.setDescription("Added all songs from " + message.mentions.users.first().username + "'s playlist");
+                exampleEmbed.setDescription("Added all songs from " + message.mentions.users.first().username + "'s " +playlistName+" playlist");
                 message.channel.send(exampleEmbed);
                 
 
             } else {
                 songCount = args[2];
-                exampleEmbed.setDescription("Added " + songCount + " songs from " + message.mentions.users.first().username + "'s playlist");
+                exampleEmbed.setDescription("Added " + songCount + " songs from " + message.mentions.users.first().username + "'s " +playlistName+" playlist");
                 message.channel.send(exampleEmbed);
             }
 
