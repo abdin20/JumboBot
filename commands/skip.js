@@ -23,7 +23,7 @@ module.exports = {
         results = await mongo.findQueueByGuildId(message.guild.id);
         //if there is no queue
         if (!results) {
-            exampleEmbed.setDescription("Queue doesnt exist");
+            exampleEmbed.setDescription("Queue doesnt exist"); 
             message.channel.send(exampleEmbed);
 
             //if there is a queue greater than 1
@@ -33,6 +33,7 @@ module.exports = {
             song= songs.shift();
 
             exampleEmbed.setDescription("Skipped "+ song);
+            console.log("Skipped "+ song);
             message.channel.send(exampleEmbed);
             //update to db and play music
             await mongo.updateQueueByGuildId(message.guild.id, { songs: songs })

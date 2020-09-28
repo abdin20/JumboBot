@@ -128,6 +128,7 @@ module.exports = {
     }
     //////////////////////////////////
     exampleEmbed.setDescription(`Added [${title}]` + "(" + url + ")")
+    console.log(`Added [${title}]` + "(" + url + ")");
     //get queue from db if it doesnt exists
     results = await mongo.findQueueByGuildId(message.guild.id);
     if (!results) {
@@ -209,6 +210,7 @@ module.exports = {
 
         //parse link
         exampleEmbed.setDescription(`Playing [${title}]` + "(" + url + ")")
+        console.log(`Playing [${title}]` + "(" + url + ")");
 
         message.channel.send(exampleEmbed)
 
@@ -280,6 +282,7 @@ module.exports = {
         exampleEmbed.setURL(url);
         exampleEmbed.setDescription(`${url}`)
         message.channel.send(exampleEmbed)
+        console.log("Playing (" + url + ")")
         const dispatcher = connection.play(url).on("finish", async () => {
 
           //get the latest song queue
