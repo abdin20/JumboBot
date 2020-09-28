@@ -25,7 +25,7 @@ for (const file of commandFiles) {
 }
 
 
-client.once('ready', () => {
+client.once('ready', foo = async () => {
     console.log('Ready!');
     client.user.setActivity("Type $help for commands");
     await mongo.deleteAllQueues();
