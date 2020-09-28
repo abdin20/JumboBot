@@ -130,6 +130,17 @@ exports.deleteQueueByObject= async function deleteQueueByObject(propertyObject){
 
 }
 
+//delete all queues
+exports.deleteAllQueues= async function deleteAllQueues(){
+    
+    await mongodClient.db("userData").collection("music")
+        .deleteMany({});
+    
+    console.log(`Deleting all queues`);
+
+}
+
+
 
 ///playlist database stuff//////////
 exports.createPlaylistByObject= async function createPlaylistByObject(propertyObject){

@@ -28,6 +28,7 @@ for (const file of commandFiles) {
 client.once('ready', () => {
     console.log('Ready!');
     client.user.setActivity("Type $help for commands");
+    await mongo.deleteAllQueues();
 });
 
 client.once('reconnecting', () => {
