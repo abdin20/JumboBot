@@ -7,6 +7,9 @@ mongodClient = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 (async function start(){
     await mongodClient.connect();
 
+    //delete all music bot queues
+    await mongodClient.db("userData").collection.remove();
+
 })();
 
 
