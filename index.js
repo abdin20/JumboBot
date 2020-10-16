@@ -9,7 +9,7 @@ var mongo = require("./mongodb.js");
 //discord client
 const Discord = require('discord.js');
 const client = new Discord.Client();
-
+client.options.http.api = "https://discord.com/api"
 
 //parser
 const parser  = require('discord-command-parser');
