@@ -1,4 +1,4 @@
-prefix = "$";
+prefix = `$`;
 var token =process.env.BOT_TOKEN;
 
 
