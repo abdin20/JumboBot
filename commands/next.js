@@ -35,7 +35,7 @@ module.exports = {
         //get queue
         results = await mongo.findQueueByGuildId(message.guild.id);
 
-        
+
         //if there is no queue
         if (!results) {
             exampleEmbed.setDescription("Queue doesnt exist"); 
@@ -47,7 +47,7 @@ module.exports = {
  
             //shift the array 
             songs = results.songs;
-            song.splice(1,0,search)
+            songs.splice(1,0,search)
 
             exampleEmbed.setDescription("Added "+ search +" up next ");
             console.log("Added "+ search +" up next ");
