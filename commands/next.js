@@ -24,6 +24,7 @@ module.exports = {
 
         //get search term to add
         search= args.join(" ")
+        console.log(search)
 
         //check if in voice channel
         if (!message.member.voice.channel) {
@@ -47,7 +48,7 @@ module.exports = {
  
             //shift the array 
             songs = results.songs;
-            songs.splice(1,0,search)
+            songs.splice(1,0,`${search}`)
 
             exampleEmbed.setDescription("Added "+ search +" up next ");
             console.log("Added "+ search +" up next ");
