@@ -2,10 +2,12 @@
 var mongo = require("../mongodb.js");
 const Discord = require('discord.js');
 
-
+const searchYoutube = require('youtube-api-v3-search');
+const ytdl = require("ytdl-core");
+var auth = process.env.GOOGLE_API_2;
 module.exports = {
     name: 'next',
-    description: 'plays this song next',
+    description: 'plays this YOUTUBE song next',
     async execute(message, args) {
 
         //display nicely with embeds
@@ -48,10 +50,45 @@ module.exports = {
  
             //shift the array 
             songs = results.songs;
-            songs.splice(1,0,`${search}`)
+   
 
-            exampleEmbed.setDescription("Added "+ search +" up next ");
-            console.log("Added "+ search +" up next ");
+               //options for the youtube query. 
+        //q property is the search term we got from user
+        const options = {
+            q: search,
+            part: 'snippet',
+            type: 'video',
+            maxResults: 1
+          }
+  
+          //search 
+          let r = await searchYoutube(auth, options).catch((err) => {
+            console.error(err);
+          });
+  
+          //check to see google api accepted request
+          if (typeof r.items === 'undefined') {
+            exampleEmbed.setDescription("Quota error");
+            message.channel.send(exampleEmbed);
+            auth = process.env.GOOGLE_API; //if not reset api key to other account
+            r = await searchYoutube(auth, options)
+          }
+  
+          //check to see if there are results
+          if (typeof r.items[0] === 'undefined') {
+            exampleEmbed.setDescription("No results error");
+            message.channel.send(exampleEmbed);
+            return;
+          }
+  
+          //adds time stamp to if there was one
+          url = "https://www.youtube.com/watch?v=" + r.items[0].id.videoId //get url
+          title = r.items[0].snippet.title //get title
+
+          songs.splice(1,0,`${url}`)  
+
+            exampleEmbed.setDescription("Added "+ title +" up next ");
+            console.log("Added "+ title +" up next ");
             message.channel.send(exampleEmbed);
             //update to db and play music
             await mongo.updateQueueByGuildId(message.guild.id, { songs: songs })
