@@ -243,7 +243,7 @@ module.exports = {
 
 
 
-        const dispatcher = connection.play(ytdl(url, { quality: "lowestaudio", begin: seek }), { seek: seek }).on("finish", async () => {
+        const dispatcher = connection.play(ytdl(url, { quality: "highestaudio", begin: seek }), { seek: seek }).on("finish", async () => {
 
           //get the latest song queue
           results = await mongo.findQueueByGuildId(voiceChannel.guild.id)
