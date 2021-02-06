@@ -18,7 +18,7 @@
     "mongodb": "^3.6.3",
     "ms-rest-azure": "^3.0.0",
     "opusscript": "^0.0.7",
-    "prism-media": "^1.2.2",
+    "prism-media": "^1.2.5",
     "request": "^2.88.2",
     "utf-8-validate": "^5.0.3",
     "vid_data": "^1.0.0",
