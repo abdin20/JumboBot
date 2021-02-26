@@ -55,6 +55,7 @@ module.exports = {
       //check to see if there are parameters and if so check if theres an index,
       if (urlParser.parse(searchUrl).params && urlParser.parse(searchUrl).params.index ) {
         playlistIndex = urlParser.parse(searchUrl).params.index //set index of playlist if found from link
+        playlistIndex-=1; //to account for indexing at 0
         exampleEmbed.setDescription(`Starting index found in link : ${playlistIndex}` );
         message.channel.send(exampleEmbed);
       };
