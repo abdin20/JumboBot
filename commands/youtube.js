@@ -2,9 +2,12 @@
 var mongo = require("../mongodb.js");
 const Discord = require('discord.js');
 var play = require("./play.js");
-
-const vid_data = require('vid_data');
-
+//url parser
+const urlParser = require("js-video-url-parser");
+//playlist metadata
+const usetube = require('usetube')
+//playlist video fetcher
+const ytfps = require('ytfps');
 
 
 module.exports = {
@@ -17,11 +20,9 @@ module.exports = {
     exampleEmbed.setTitle("Youtube Playlist");
 
     var searchUrl = "";  //default to no url and indexing starting at 0
-    var index = 0;
-    var count = 0;
     var songs = new Array();
-    var timeStamp = "";
     var playlistId = "";
+    var count = 0;
     //check if arguemnts are there
     if (args.length < 1) {
       exampleEmbed.setDescription("Please enter a playlist link");
@@ -36,75 +37,48 @@ module.exports = {
       return;
     }
 
+    //update user on progress
+    exampleEmbed.setDescription("Searching, please wait");
+    message.channel.send(exampleEmbed);
+
+
+    //get url for playlist
     searchUrl = args[0];
-
-    //check for time stamp in video
-    if (searchUrl.indexOf("?t=") > -1) {
-      timeStamp = "?t=" + searchUrl.substring(searchUrl.indexOf("?t=") + 3) //get time stamp part of url
-      searchUrl = searchUrl.substring(0, searchUrl.indexOf("?t=")) //edit teh query to get rid of time stamp
-      console.log("time stamp detected");
-    }
-
-    //check for time stamp in video other format
-    if (searchUrl.indexOf("&t=") > -1) {
-      timeStamp = "&t=" + searchUrl.substring(searchUrl.indexOf("&t=") + 3) //get time stamp part of url
-      searchUrl = searchUrl.substring(0, searchUrl.indexOf("&t=")) //edit teh query to get rid of time stamp
-      console.log("time stamp detected");
-    }
+    playlistIndex = 0; //default to get whole playlist
+    //check if list exists in link
+    if (urlParser.parse(searchUrl).list) {
 
 
-    //check if there is an index spot to start from
-    if (searchUrl.indexOf("&index=") > -1) {
-      index = searchUrl.substring(searchUrl.indexOf("&index=") + 7) //get time stamp part of url
-      searchUrl = searchUrl.substring(0, searchUrl.indexOf("&index="))
-      console.log("index detected : " + index);
-    }
+      //save playlist id
+      playlistId = urlParser.parse(searchUrl).list
 
-    //check if there is an index spot to start from other form
-    if (searchUrl.indexOf("?index=") > -1) {
-      index = searchUrl.substring(searchUrl.indexOf("?index=") + 7) //get time stamp part of url
-      searchUrl = searchUrl.substring(0, searchUrl.indexOf("?index="))
-      console.log("index detected : " + index);
-    }
+      //check to see if there are parameters and if so check if theres an index,
+      if (urlParser.parse(searchUrl).params && urlParser.parse(searchUrl).params.index ) {
+        playlistIndex = urlParser.parse(searchUrl).params.index //set index of playlist if found from link
+        exampleEmbed.setDescription(`Starting index found in link : ${playlistIndex}` );
+        message.channel.send(exampleEmbed);
+      };
+      console.log(`Starting index is ${playlistIndex}`)
 
-    //check for time stamp in video other format
-    if (searchUrl.indexOf("&list=") > -1) {
-      playlistId = searchUrl.substring(searchUrl.indexOf("&list=") + 6) //get time stamp part of url
-      console.log("list id detected");
-    } //check for time stamp in video other format
-    else if (searchUrl.indexOf("?list=") > -1) {
-      playlistId = searchUrl.substring(searchUrl.indexOf("?list=") + 6) //get time stamp part of url
-      console.log("list id detected");
-    }else{
-      exampleEmbed.setDescription("error with playlists id");
+
+      //get list of videos from playlist id
+      result= await (await ytfps(playlistId)).videos
+
+      //for every video push it to the song array
+      result.forEach((element, currIndex) => {
+        if (currIndex >= playlistIndex) {   //check to see if we are starting from the correct index
+          songs.push(`${element.url}`)
+          count++;
+        }
+
+      })
+    } else {
+      exampleEmbed.setDescription("Invalid playlist link");
       message.channel.send(exampleEmbed);
       return;
     }
 
-    searchUrl="https://www.youtube.com/playlist?list="+playlistId;
-
-
-    //get vid ids for playlist
-    console.log("running playlist search on " + searchUrl)
-    searchResults = await vid_data.get_playlist_videos(searchUrl)
-    if (!searchResults) {
-      exampleEmbed.setDescription("error with playlists");
-      message.channel.send(exampleEmbed);
-      return;
-    }
-    //add the videos to playlist
-    for (var m = index - 1; m < searchResults.length; m++) {
-      count++;
-
-      //if first item in for loop, add the time stamp if there is one 
-      if (m == (index - 1)) {
-        songs.push("https://www.youtube.com/watch?v=" + searchResults[m] + timeStamp);
-      } else {
-        songs.push("https://www.youtube.com/watch?v=" + searchResults[m]);
-      }
-
-    }
-
+    //check to see if music queue is in db
     results = await mongo.findQueueByGuildId(message.guild.id);
 
     //queue not found
