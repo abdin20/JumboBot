@@ -4,6 +4,7 @@ const Discord = require('discord.js');
 
 //youtube imports
 const searchYoutube = require('youtube-api-v3-search');
+const urlParser = require("js-video-url-parser");
 const ytdl = require("ytdl-core");
 var auth = process.env.GOOGLE_API_2;
 
@@ -104,7 +105,7 @@ module.exports = {
         if (typeof r.items === 'undefined') {
           exampleEmbed.setDescription("Quota error");
           message.channel.send(exampleEmbed);
-          auth = process.env.GOOGLE_API; //if not reset api key to other account
+          auth = process.env.GOOGLE_API;//if not reset api key to other account
           r = await searchYoutube(auth, options)
         }
 
@@ -182,6 +183,7 @@ module.exports = {
       if (!results || results.songs.length == 0) {
         await mongo.deleteQueueByObject({ guildId: voiceChannel.guild.id });
         connection.play("");
+        message.member.voice.channel.leave();
         return;
       }
 
@@ -192,6 +194,11 @@ module.exports = {
       console.log("joined channel");
       //dispatcher plays the audio
 
+      //leave if queue is done
+      if(playingSongs.length===0){
+        message.member.voice.channel.leave(); //disconnect after
+        return;
+      }
 
 
       //send to discord
@@ -232,7 +239,7 @@ module.exports = {
         }
 
         //check for time stamp in video
-        if (url.indexOf("?t=") > -1) { 
+        if (url.indexOf("?t=") > -1) {
 
           seek = url.substring(url.indexOf("?t=") + 3) //get time stamp part of url
           url = url.substring(0, url.indexOf("?t=")) //edit teh query to get rid of time stamp
@@ -253,11 +260,13 @@ module.exports = {
           //if loop isnt enabled, shift the queue 
           if (!results.loop) {
             url = songs.shift();
+
           }
 
           console.log(`Finished ${title}`)
           //update the queue with the removed first song
           await mongo.updateQueueByGuildId(voiceChannel.guild.id, { songs: songs })
+
           this.playMusic(message, voiceChannel);
 
         }).on("error", async error => {
@@ -300,6 +309,7 @@ module.exports = {
           await mongo.updateQueueByGuildId(message.guild.id, { songs: songs })
           this.playMusic(message, voiceChannel);
 
+
         }).on("error", async error => {
           message.channel.send("Error direct link")
 
@@ -309,6 +319,7 @@ module.exports = {
           url = songs.shift();
           //update the queue with the removed first song
           await mongo.updateQueueByGuildId(message.guild.id, { songs: songs })
+
           this.playMusic(message, voiceChannel);
 
 
