@@ -194,12 +194,6 @@ module.exports = {
       console.log("joined channel");
       //dispatcher plays the audio
 
-      //leave if queue is done
-      if(playingSongs.length===0){
-        message.member.voice.channel.leave(); //disconnect after
-        return;
-      }
-
 
       //send to discord
       exampleEmbed = new Discord.MessageEmbed();
