@@ -25,10 +25,10 @@
     "utf-8-validate": "^5.0.3",
     "vid_data": "^1.0.0",
     "youtube-api-v3-search": "^1.2.1",
-    "ytdl-core": "^4.8.0",
+    "ytdl-core": "^4.8.2",
     "ytfps": "^1.0.4"
   },
   "engines": {
-    "node": "15.12.0"
+    "node": "16.3.0"
   }
 }
