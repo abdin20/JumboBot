@@ -184,6 +184,11 @@ module.exports = {
 
       //delete the queue if the size is 0
       if (!results || results.songs.length == 0) {
+         var delay=45 //in seconds
+        //if were in method from running a skip method, no need for delay
+        if(options.skip===true){
+          delay=0;
+        }
 
         // After the queue has ended
         timeoutID = setTimeout(async () => {
@@ -193,7 +198,7 @@ module.exports = {
           connection.play("");
           message.member.voice.channel.leave();
           return;
-        }, 45*1000) // You should use the time in ms
+        }, delay*1000) // You should use the time in ms
         return;
       } else { ///runs if queue is not empty
         // If the bot is used again

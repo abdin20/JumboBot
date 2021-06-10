@@ -37,7 +37,7 @@ module.exports = {
             message.channel.send(exampleEmbed);
             //update to db and play music
             await mongo.updateQueueByGuildId(message.guild.id, { songs: songs })
-            play.playMusic(message,message.member.voice.channel);
+            play.playMusic(message,message.member.voice.channel,{skip:true});
         }
 
     },
