@@ -186,7 +186,7 @@ module.exports = {
       if (!results || results.songs.length == 0) {
          var delay=45 //in seconds
         //if were in method from running a skip method, no need for delay
-        if(options.skip===true){
+        if(typeof options !== 'undefined' && options.skip===true){
           delay=0;
         }
 
