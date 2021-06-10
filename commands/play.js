@@ -2,6 +2,9 @@
 var mongo = require("../mongodb.js");
 const Discord = require('discord.js');
 
+
+// timeout function variable
+let timeoutID;
 //youtube imports
 const searchYoutube = require('youtube-api-v3-search');
 const urlParser = require("js-video-url-parser");
@@ -181,11 +184,30 @@ module.exports = {
 
       //delete the queue if the size is 0
       if (!results || results.songs.length == 0) {
-        await mongo.deleteQueueByObject({ guildId: voiceChannel.guild.id });
-        connection.play("");
-        message.member.voice.channel.leave();
+
+        // After the queue has ended
+        timeoutID = setTimeout(async () => {
+
+          //code to leave server
+          await mongo.deleteQueueByObject({ guildId: voiceChannel.guild.id });
+          connection.play("");
+          message.member.voice.channel.leave();
+          return;
+        }, 45*1000) // You should use the time in ms
         return;
+      } else { ///runs if queue is not empty
+        // If the bot is used again
+        clearTimeout(timeoutID)
+        timeoutID = undefined
       }
+      /////
+
+
+
+
+
+
+      /////
 
       //get the song queue
       playingSongs = results.songs;
