@@ -183,10 +183,10 @@ module.exports = {
 
       //delete the queue if the size is 0
       if (!results || results.songs.length == 0) {
-         var delay=45 //in seconds
+        var delay = 45 //in seconds
         //if were in method from running a skip method, no need for delay
-        if(typeof options !== 'undefined' && options.skip===true){
-          delay=0;
+        if (typeof options !== 'undefined' && options.skip === true) {
+          delay = 0;
         }
 
         // After the queue has ended
@@ -194,11 +194,15 @@ module.exports = {
 
           //code to leave server
           await mongo.deleteQueueByObject({ guildId: voiceChannel.guild.id });
-          connection.play("https://a.pomf.cat/akhqhn.mp3");
-          message.guild.me.voice.channel.leave();
-          return;
-        }, delay*1000) // You should use the time in ms
-        return;
+
+          //play goodbye then leave
+          const dispatcher = connection.play("https://a.pomf.cat/akhqhn.mp3").on("finish", async () => {
+            message.guild.me.voice.channel.leave();
+            return;
+          })
+
+
+        }, delay * 1000) // You should use the time in ms
       } else { ///runs if queue is not empty
         // If the bot is used again
         clearTimeout(timeoutID)
