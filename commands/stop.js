@@ -21,6 +21,6 @@ module.exports = {
         
         //delete queue and leave
          await mongo.deleteQueueByObject({ guildId: message.guild.id });
-         message.member.voice.channel.leave();
+         message.guild.me.voice.channel.leave();
 	},
 };
