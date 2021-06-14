@@ -1,4 +1,5 @@
 prefix = `$`;
+require('dotenv').config()
 var token =process.env.BOT_TOKEN;
 
 
