@@ -1,5 +1,8 @@
+const path = require('path')
+require('dotenv').config({ path: path.resolve(__dirname, './.env') })
+
+
 prefix = `$`;
-require('dotenv').config({path:__dirname+'/.env'})
 var token =process.env.BOT_TOKEN;
 
 
