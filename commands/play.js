@@ -195,11 +195,11 @@ module.exports = {
           //code to leave server
           await mongo.deleteQueueByObject({ guildId: voiceChannel.guild.id });
 
-          //play goodbye then leave
-          const dispatcher = connection.play("https://a.pomf.cat/akhqhn.mp3").on("finish", async () => {
+
+         connection.play("")
             message.guild.me.voice.channel.leave();
             return;
-          })
+        
 
 
         }, delay * 1000) // You should use the time in ms
