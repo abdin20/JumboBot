@@ -2,7 +2,6 @@
 const fs = require('fs');
 const Discord = require('discord.js');
 
-require('dotenv').config()
 const ImageSearchAPIClient = require('@azure/cognitiveservices-imagesearch');
 const CognitiveServicesCredentials = require('ms-rest-azure').CognitiveServicesCredentials;
 const Search = require('azure-cognitiveservices-search');
