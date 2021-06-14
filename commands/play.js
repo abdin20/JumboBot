@@ -18,7 +18,6 @@ module.exports = {
   async execute(message, args) {
     //join the arguements
     search = args.join(" ");
-
     //display nicely with embeds
     exampleEmbed = new Discord.MessageEmbed();
     exampleEmbed.setColor('#0099ff');
@@ -196,7 +195,7 @@ module.exports = {
           //code to leave server
           await mongo.deleteQueueByObject({ guildId: voiceChannel.guild.id });
           connection.play("");
-          message.member.voice.channel.leave();
+          message.guild.me.voice.channel.leave();
           return;
         }, delay*1000) // You should use the time in ms
         return;
