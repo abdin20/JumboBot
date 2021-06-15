@@ -194,15 +194,12 @@ module.exports = {
 
           //code to leave server
           await mongo.deleteQueueByObject({ guildId: voiceChannel.guild.id });
-
-
-         connection.play("")
+            connection.play("")
             message.guild.me.voice.channel.leave();
-            return;
         
 
-
         }, delay * 1000) // You should use the time in ms
+        return
       } else { ///runs if queue is not empty
         // If the bot is used again
         clearTimeout(timeoutID)
