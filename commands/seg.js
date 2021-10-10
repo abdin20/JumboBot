@@ -18,7 +18,7 @@ module.exports = {
         msg+=  `WANNA SEG?`
         
         exampleEmbed.setDescription(msg)
-        message.channel.send({ embeds: [exampleEmbed] });
+        message.channel.send(exampleEmbed);;
    
     },
 };

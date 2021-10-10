@@ -17,7 +17,7 @@ module.exports = {
         //check for playlist name
         if (typeof args[0] === 'undefined') {
             exampleEmbed.setDescription("you need to enter a playlist name");
-                message.channel.send(exampleEmbed);
+            message.channel.send(exampleEmbed);
                 return; //leave 
                 
         }else{

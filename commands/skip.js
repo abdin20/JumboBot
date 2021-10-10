@@ -17,14 +17,14 @@ module.exports = {
         //check if in voice channel
         if (!message.member.voice.channel) {
             exampleEmbed.setDescription("You need to be in a voice channel");
-            message.channel.send({ embeds: [exampleEmbed] });
+            message.channel.send(exampleEmbed);;
             return;
         }
         results = await mongo.findQueueByGuildId(message.guild.id);
         //if there is no queue
         if (!results) {
             exampleEmbed.setDescription("Queue doesnt exist"); 
-            message.channel.send({ embeds: [exampleEmbed] });
+            message.channel.send(exampleEmbed);;
 
             //if there is a queue greater than 1
         } else{
@@ -34,7 +34,7 @@ module.exports = {
 
             exampleEmbed.setDescription("Skipped "+ song);
             console.log("Skipped "+ song);
-            message.channel.send({ embeds: [exampleEmbed] });
+            message.channel.send(exampleEmbed);;
             //update to db and play music
             await mongo.updateQueueByGuildId(message.guild.id, { songs: songs })
             play.playMusic(message,message.member.voice.channel,{skip:true});

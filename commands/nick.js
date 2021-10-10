@@ -14,7 +14,7 @@ module.exports = {
         //check for arguments
         if (args.length < 1) {
             exampleEmbed.setDescription("please give a user and nickname");
-            message.channel.send({ embeds: [exampleEmbed] });
+            message.channel.send(exampleEmbed);;
             return
         }
 
@@ -28,12 +28,12 @@ module.exports = {
         try {
             await member.setNickname(nickReason);
             exampleEmbed.setDescription("Changed " + member.displayName + "'s nickname!");
-            message.channel.send({ embeds: [exampleEmbed] });
+            message.channel.send(exampleEmbed);;
 
         } catch (error) {
             console.error(error);
             exampleEmbed.setDescription("error");
-            message.channel.send({ embeds: [exampleEmbed] });
+            message.channel.send(exampleEmbed);;
         }
 
 

@@ -19,21 +19,23 @@ module.exports = {
     //join the arguements
     search = args.join(" ");
     //display nicely with embeds
-    exampleEmbed = new Discord.MessageEmbed();
+    var exampleEmbed = new Discord.MessageEmbed();
     exampleEmbed.setColor('#0099ff');
     exampleEmbed.setTitle("Music");
 
     //check if arguemnts are there
     if (args.length < 1) {
       exampleEmbed.setDescription("Please enter a search term");
-      message.channel.send({ embeds: [exampleEmbed] });
+      console.log("1")
+      message.channel.send(exampleEmbed);
       return
     }
 
     //check if in voice channel
     if (!message.member.voice.channel) {
       exampleEmbed.setDescription("You need to be in a voice channel");
-      message.channel.send({ embeds: [exampleEmbed] });
+      console.log("2")
+      message.channel.send(exampleEmbed);
       return;
     }
 
@@ -106,7 +108,8 @@ module.exports = {
         //check to see google api accepted request
         if (typeof r.items === 'undefined') {
           exampleEmbed.setDescription("Quota error");
-          message.channel.send({ embeds: [exampleEmbed] });
+          console.log("3")
+          message.channel.send(exampleEmbed);;
           auth = process.env.GOOGLE_API;//if not reset api key to other account
           r = await searchYoutube(auth, options)
         }
@@ -114,7 +117,8 @@ module.exports = {
         //check to see if there are results
         if (typeof r.items[0] === 'undefined') {
           exampleEmbed.setDescription("No results error");
-          message.channel.send({ embeds: [exampleEmbed] });
+          console.log("4")
+          message.channel.send(exampleEmbed);;
           return;
         }
 
@@ -145,13 +149,15 @@ module.exports = {
       await mongo.createQueueByObject(propertyObject)
 
       //send embed message
-      message.channel.send({ embeds: [exampleEmbed] });
+      console.log("5")
+      message.channel.send(exampleEmbed);;
 
       //go to playmusic function
       await this.playMusic(message, message.member.voice.channel);
       return;
     } else if (results.songs.length == 0) {    //if queue is empty 
-      message.channel.send({ embeds: [exampleEmbed] });
+      console.log("6")
+      message.channel.send(exampleEmbed);;
       //get song queue and add the new song
       addSong = results.songs;
       addSong.push(url)
@@ -163,7 +169,8 @@ module.exports = {
 
     } else {  //if the queue exists then we add it to queue
       //search youtube for the terms and get url
-      message.channel.send({ embeds: [exampleEmbed] });
+      console.log("7")
+      message.channel.send(exampleEmbed);;
 
       addSong = results.songs;
       addSong.push(url)
@@ -239,8 +246,8 @@ module.exports = {
         //parse link
         exampleEmbed.setDescription(`Playing [${title}]` + "(" + url + ")")
         console.log(`Playing [${title}]` + "(" + url + ")");
-
-        message.channel.send({ embeds: [exampleEmbed] });
+        console.log("8")
+        message.channel.send(exampleEmbed);;
 
         //default seek to 0
         let seek = 0;
@@ -311,7 +318,7 @@ module.exports = {
         //play the audio with link
         exampleEmbed.setURL(url);
         exampleEmbed.setDescription(`${url}`)
-        message.channel.send({ embeds: [exampleEmbed] });
+        message.channel.send(exampleEmbed);;
         console.log("Playing (" + url + ")")
         const dispatcher = connection.play(url).on("finish", async () => {
 

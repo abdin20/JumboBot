@@ -18,7 +18,7 @@ module.exports = {
         msg+=  `WANNA COMP?`
         
         exampleEmbed.setDescription(msg)
-        message.channel.send({ embeds: [exampleEmbed] });
+        message.channel.send(exampleEmbed);;
    
     },
 };
