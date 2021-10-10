@@ -12,7 +12,7 @@ var mongo = require("./mongodb.js");
 
 //discord client
 const Discord = require('discord.js');
-const client = new Discord.Client();
+const client = new Discord.Client({ intents: ["GUILDS", "GUILD_MESSAGES"] })
 client.options.http.api = "https://discord.com/api"
 
 //parser
