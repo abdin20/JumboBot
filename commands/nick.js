@@ -30,8 +30,9 @@ module.exports = {
             exampleEmbed.setDescription("Changed " + member.displayName + "'s nickname!");
             message.channel.send({ embeds: [exampleEmbed] });
 
-        } catch {
-            exampleEmbed.setDescription("No permissions to change");
+        } catch (error) {
+            console.error(error);
+            exampleEmbed.setDescription("error");
             message.channel.send({ embeds: [exampleEmbed] });
         }
 
