@@ -26,14 +26,14 @@ module.exports = {
     //check if arguemnts are there
     if (args.length < 1) {
       exampleEmbed.setDescription("Please enter a search term");
-      message.channel.send(exampleEmbed);
+      message.channel.send({ embeds: [exampleEmbed] });
       return
     }
 
     //check if in voice channel
     if (!message.member.voice.channel) {
       exampleEmbed.setDescription("You need to be in a voice channel");
-      message.channel.send(exampleEmbed);
+      message.channel.send({ embeds: [exampleEmbed] });
       return;
     }
 
@@ -106,7 +106,7 @@ module.exports = {
         //check to see google api accepted request
         if (typeof r.items === 'undefined') {
           exampleEmbed.setDescription("Quota error");
-          message.channel.send(exampleEmbed);
+          message.channel.send({ embeds: [exampleEmbed] });
           auth = process.env.GOOGLE_API;//if not reset api key to other account
           r = await searchYoutube(auth, options)
         }
@@ -114,7 +114,7 @@ module.exports = {
         //check to see if there are results
         if (typeof r.items[0] === 'undefined') {
           exampleEmbed.setDescription("No results error");
-          message.channel.send(exampleEmbed);
+          message.channel.send({ embeds: [exampleEmbed] });
           return;
         }
 
@@ -145,13 +145,13 @@ module.exports = {
       await mongo.createQueueByObject(propertyObject)
 
       //send embed message
-      message.channel.send(exampleEmbed);
+      message.channel.send({ embeds: [exampleEmbed] });
 
       //go to playmusic function
       await this.playMusic(message, message.member.voice.channel);
       return;
     } else if (results.songs.length == 0) {    //if queue is empty 
-      message.channel.send(exampleEmbed);
+      message.channel.send({ embeds: [exampleEmbed] });
       //get song queue and add the new song
       addSong = results.songs;
       addSong.push(url)
@@ -163,7 +163,7 @@ module.exports = {
 
     } else {  //if the queue exists then we add it to queue
       //search youtube for the terms and get url
-      message.channel.send(exampleEmbed);
+      message.channel.send({ embeds: [exampleEmbed] });
 
       addSong = results.songs;
       addSong.push(url)
@@ -240,7 +240,7 @@ module.exports = {
         exampleEmbed.setDescription(`Playing [${title}]` + "(" + url + ")")
         console.log(`Playing [${title}]` + "(" + url + ")");
 
-        message.channel.send(exampleEmbed)
+        message.channel.send({ embeds: [exampleEmbed] });
 
         //default seek to 0
         let seek = 0;
@@ -311,7 +311,7 @@ module.exports = {
         //play the audio with link
         exampleEmbed.setURL(url);
         exampleEmbed.setDescription(`${url}`)
-        message.channel.send(exampleEmbed)
+        message.channel.send({ embeds: [exampleEmbed] });
         console.log("Playing (" + url + ")")
         const dispatcher = connection.play(url).on("finish", async () => {
 

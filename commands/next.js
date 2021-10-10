@@ -20,7 +20,7 @@ module.exports = {
         //check if arguemnts are there
         if (args.length < 1) {
         exampleEmbed.setDescription("Please enter a term");
-        message.channel.send(exampleEmbed);
+        message.channel.send({ embeds: [exampleEmbed] });
         return;
         }
 
@@ -31,7 +31,7 @@ module.exports = {
         //check if in voice channel
         if (!message.member.voice.channel) {
             exampleEmbed.setDescription("You need to be in a voice channel");
-            message.channel.send(exampleEmbed);
+            message.channel.send({ embeds: [exampleEmbed] });
             return;
         }
 
@@ -42,7 +42,7 @@ module.exports = {
         //if there is no queue
         if (!results) {
             exampleEmbed.setDescription("Queue doesnt exist"); 
-            message.channel.send(exampleEmbed);
+            message.channel.send({ embeds: [exampleEmbed] });
 
             //if there is a queue greater than 1
         } else{
@@ -69,7 +69,7 @@ module.exports = {
           //check to see google api accepted request
           if (typeof r.items === 'undefined') {
             exampleEmbed.setDescription("Quota error");
-            message.channel.send(exampleEmbed);
+            message.channel.send({ embeds: [exampleEmbed] });
             auth = process.env.GOOGLE_API; //if not reset api key to other account
             r = await searchYoutube(auth, options)
           }
@@ -77,7 +77,7 @@ module.exports = {
           //check to see if there are results
           if (typeof r.items[0] === 'undefined') {
             exampleEmbed.setDescription("No results error");
-            message.channel.send(exampleEmbed);
+            message.channel.send({ embeds: [exampleEmbed] });
             return;
           }
   
@@ -89,7 +89,7 @@ module.exports = {
 
             exampleEmbed.setDescription("Added "+ title +" up next ");
             console.log("Added "+ title +" up next ");
-            message.channel.send(exampleEmbed);
+            message.channel.send({ embeds: [exampleEmbed] });
             //update to db and play music
             await mongo.updateQueueByGuildId(message.guild.id, { songs: songs })
         }

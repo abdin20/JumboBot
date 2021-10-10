@@ -15,7 +15,7 @@ module.exports = {
         //check if in voice channel
         if (!message.member.voice.channel) {
             exampleEmbed.setDescription("You need to be in a voice channel");
-            message.channel.send(exampleEmbed);
+            message.channel.send({ embeds: [exampleEmbed] });
             return;
         }
 
@@ -23,7 +23,7 @@ module.exports = {
            //check if arguemnts are there
         if (args.length < 1) {    
         exampleEmbed.setDescription("Please enter number of seconds");
-        message.channel.send(exampleEmbed);
+        message.channel.send({ embeds: [exampleEmbed] });
         return;
       }
       
