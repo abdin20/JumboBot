@@ -18,16 +18,23 @@ module.exports = {
             return
         }
 
+        //get the guildmember
+        let member = message.mentions.members.first()
 
-        let member = message.mentions.members.first(),
-        
+        //pop the first argument which is the user mentioned
+            args.shift();
+            nickReason = args.join(" ")
 
-        nickReason=args[1]
+        try {
+            await member.setNickname(nickReason);
+            exampleEmbed.setDescription("Changed " + member.displayName + "'s nickname!");
+            message.channel.send({ embeds: [exampleEmbed] });
 
-        await member.setNickname(nickReason);
+        } catch {
+            exampleEmbed.setDescription("No permissions to change");
+            message.channel.send({ embeds: [exampleEmbed] });
+        }
 
-        exampleEmbed.setDescription("Changed " + member.displayName+ "'s nickname!");
-        message.channel.send({ embeds: [exampleEmbed] });
 
 
     },
