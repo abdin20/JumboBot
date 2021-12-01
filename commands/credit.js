@@ -12,7 +12,7 @@ module.exports = {
 
         const filter = (reaction, user) => reaction.emoji.name === '🇹🇼';
         const reactionTime = 30000;
-        var reactionCount=-1;
+        var reactionCount = -1;
         //set the embed message
         var exampleEmbed = new Discord.MessageEmbed();
         exampleEmbed.setColor('#aa381e');
@@ -54,6 +54,9 @@ module.exports = {
 
                 //get mentioned user object
                 user = message.mentions.users.first();
+
+                //will make a new one if person doesnt have account
+                await mongo.findUserByAuthor(user);
                 exampleEmbed.setImage(user.avatarURL());
                 //check if reason was given 
                 if (typeof args[2] === 'undefined') {
@@ -66,7 +69,7 @@ module.exports = {
                     args.shift();
                     reason = args.join(" ")
 
-                    exampleEmbed.setDescription(`React in the next ${reactionTime/1000} seconds to increase ${user.username}'s social credit \n Reason: ${reason}`)
+                    exampleEmbed.setDescription(`React in the next ${reactionTime / 1000} seconds to increase ${user.username}'s social credit \n Reason: ${reason}`)
 
                     //promise for sending message
                     var reactionMessage = await message.channel.send(exampleEmbed)
@@ -75,8 +78,8 @@ module.exports = {
                     //wait 15 seconds for emojis
                     const collector = reactionMessage.createReactionCollector(filter, { time: reactionTime });
 
-                
-                    collector.on('collect', r => {console.log(`1 upvote`); reactionCount++;});
+
+                    collector.on('collect', r => { console.log(`1 upvote`); reactionCount++; });
                     //once time is over update users credit score
                     collector.on('end', async collected => {
                         console.log(`Collected ${reactionCount} items`)
@@ -97,18 +100,18 @@ module.exports = {
                         //check if user is in channel
                         //https://lithi.io/file/7m7T.mp3
                         //check if person in channel
-                        if (message.member.voice.channel && !await mongo.findQueueByGuildId(message.guild.id)){
+                        if (message.member.voice.channel && !await mongo.findQueueByGuildId(message.guild.id)) {
 
                             await message.member.voice.channel.join()
 
                                 .then(foo = async (connection) => {
                                     await connection.play("https://lithi.io/file/7m7T.mp3");
                                 });
-                        } 
+                        }
                     });
                 }
             }
-        } else if (args[0] === "remove") {  
+        } else if (args[0] === "remove") {
             //check author of message if user didnt mention
             if (!message.mentions.users.first()) {
                 exampleEmbed.setDescription("you must mention a user");
@@ -119,6 +122,8 @@ module.exports = {
 
                 //get mentioned user object
                 user = message.mentions.users.first();
+                //create social credit if not found
+                await mongo.findUserByAuthor(user);
                 exampleEmbed.setImage(user.avatarURL());
                 //check if reason was given 
                 if (typeof args[2] === 'undefined') {
@@ -131,7 +136,7 @@ module.exports = {
                     args.shift();
                     reason = args.join(" ")
 
-                    exampleEmbed.setDescription(`React in the next ${reactionTime/1000} seconds to decrease ${user.username}'s social credit \n Reason: ${reason}`)
+                    exampleEmbed.setDescription(`React in the next ${reactionTime / 1000} seconds to decrease ${user.username}'s social credit \n Reason: ${reason}`)
 
                     //promise for sending message
                     var reactionMessage = await message.channel.send(exampleEmbed)
@@ -141,7 +146,7 @@ module.exports = {
                     const collector = reactionMessage.createReactionCollector(filter, { time: reactionTime });
 
                     //once time is over update users credit score
-                    collector.on('collect', r => {console.log(`1 downvote`); reactionCount++;});
+                    collector.on('collect', r => { console.log(`1 downvote`); reactionCount++; });
                     collector.on('end', foo = async collected => {
                         console.log(`Collected ${reactionCount} items`)
 
