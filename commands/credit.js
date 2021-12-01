@@ -57,7 +57,8 @@ module.exports = {
 
                 //will make a new one if person doesnt have account
                 await mongo.findUserByAuthor(user);
-                exampleEmbed.setImage(user.avatarURL());
+                exampleEmbed.setThumbnail(user.avatarURL());
+                exampleEmbed.setImage("https://i.imgur.com/xJlNJts.png");
                 //check if reason was given 
                 if (typeof args[2] === 'undefined') {
                     exampleEmbed.setDescription("you must give a reason");
@@ -124,7 +125,8 @@ module.exports = {
                 user = message.mentions.users.first();
                 //create social credit if not found
                 await mongo.findUserByAuthor(user);
-                exampleEmbed.setImage(user.avatarURL());
+                exampleEmbed.setThumbnail(user.avatarURL());
+                exampleEmbed.setImage("https://i.imgur.com/OR8IhE7.png");
                 //check if reason was given 
                 if (typeof args[2] === 'undefined') {
                     exampleEmbed.setDescription("you must give a reason");
