@@ -11,7 +11,7 @@ module.exports = {
 
 
         const filter = (reaction, user) => reaction.emoji.name === '🇹🇼';
-        const reactionTime = 5000;
+        const reactionTime = 30000;
         var reactionCount=-1;
         //set the embed message
         var exampleEmbed = new Discord.MessageEmbed();
