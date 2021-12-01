@@ -32,6 +32,20 @@ exports.createUser= async function createUser(newUser) {
 
 }
 
+//find socialcredit by discord id
+exports.findCreditById =async function findBalanceById(userId) {
+
+    result =  await mongodClient.db("userData").collection("money").findOne({id: userId}
+    );
+
+     if(result){
+         return result.socialCredit;
+     }else{
+         return null;
+     }
+
+}
+
 //find user by their ID
 exports.findUserByAuthor =async function findUserByAuthor(author) {
 
@@ -50,6 +64,7 @@ exports.findUserByAuthor =async function findUserByAuthor(author) {
          person.id = author.id;
          person.name = author.username;
          person.balance = 0;
+         person.socialCredit=1000;
         await this.createUser(person)
 
         result =  await mongodClient.db("userData").collection("money").findOne({id: author.id})
@@ -62,6 +77,12 @@ exports.findUserByAuthor =async function findUserByAuthor(author) {
 
 ///gambling stuff///////////////////////////////////////////////
 exports.updateUserById =async function updateUserById(id, propertyObject) {
+    result = await mongodClient.db("userData").collection("money")
+        .updateOne({ id: id }, { $set: propertyObject });
+}
+
+///social credit methods////////////
+exports.updateSocialCreditById =async function updateUserById(id, propertyObject) {
     result = await mongodClient.db("userData").collection("money")
         .updateOne({ id: id }, { $set: propertyObject });
 }
