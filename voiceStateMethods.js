@@ -17,7 +17,7 @@ exports.attemptKickUser = async function attemptKickUser(state) {
 
 
     //check if channel name is made for social credit checking
-    if (filteredChannelName !== null && channelName.indexOf("social credit") > -1) {
+    if (filteredChannelName !== null && channelName.indexOf("+") > -1) {
         filteredChannelName = filteredChannelName.join("");
         //convert to integer
         filteredChannelName = parseInt(filteredChannelName)
