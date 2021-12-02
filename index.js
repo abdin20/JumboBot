@@ -9,6 +9,7 @@ var token =process.env.BOT_TOKEN;
 ///////////////////////////////discord stuff
 const fs = require('fs');
 var mongo = require("./mongodb.js");
+var voiceStateMethods=require('./voiceStateMethods.js')
 
 //discord client
 const Discord = require('discord.js');
@@ -75,5 +76,24 @@ client.on('message', foo = async (message) => {
 
 });
 
+
+//person joining channel
+client.on('voiceStateUpdate', (oldState, newState) => {
+
+    if (oldState.member.user.bot || newState.member.user.bot) return;
+
+    if(oldState.channelID === newState.channelID) {
+        // console.log('a user has not moved!')
+    }
+    if(oldState.channelID != null && newState.channelID != null && newState.channelID != oldState.channelID) {
+        // console.log('a user switched channels')
+    }
+    if(oldState.channelID === null) {
+        voiceStateMethods.attemptKickUser(newState)
+    }
+    if (newState.channelID === null) {
+        // console.log('a user left!')
+    }
+});
 
 client.login(token);

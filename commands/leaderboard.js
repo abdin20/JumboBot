@@ -43,7 +43,6 @@ module.exports = {
             }
             //sort the users by social credit
             filterUsers.sort((a,b)=>{return b.socialCredit-a.socialCredit})
-            console.log(filterUsers)
 
             var stringBuilder=""
             var count=1;
