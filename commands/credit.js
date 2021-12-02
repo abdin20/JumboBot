@@ -20,7 +20,7 @@ module.exports = {
         exampleEmbed.setThumbnail("https://i.imgur.com/cUin9RC.jpeg");
         exampleEmbed.setFooter("China #1")
         if (typeof args[0] === 'undefined') {
-            exampleEmbed.setDescription('you need to enter arguments eg "balance <user>", "add <user> <reason> ", remove <user> <reason>');
+            exampleEmbed.setDescription('you need to enter arguments eg "score <user>", "add <user> <reason> ", remove <user> <reason>');
             message.channel.send(exampleEmbed);
             return; //leave 
 
@@ -101,14 +101,17 @@ module.exports = {
                         //check if user is in channel
                         //https://lithi.io/file/7m7T.mp3
                         //check if person in channel
-                        // if (message.member.voice.channel && !await mongo.findQueueByGuildId(message.guild.id)) {
+                        if (message.member.voice.channel && !await mongo.findQueueByGuildId(message.guild.id)) {
 
-                        //     await message.member.voice.channel.join()
+                            await message.member.voice.channel.join()
 
-                        //         .then(foo = async (connection) => {
-                        //             await connection.play("https://lithi.io/file/7m7T.mp3");
-                        //         });
-                        // }
+                                .then(foo = async (connection) => {
+                                    await connection.play("https://lithi.io/file/7m7T.mp3").on("finish", async () => {
+                                        //leaves after finishing
+                                        message.guild.me.voice.channel.leave();
+                                    });
+                                });
+                        }
                     });
                 }
             }
@@ -168,14 +171,17 @@ module.exports = {
                         //check if user is in channel
                         //https://lithi.io/file/7m7T.mp3
                         //check if person in channel and music not playing
-                        // if (message.member.voice.channel && !await mongo.findQueueByGuildId(message.guild.id)) {
+                        if (message.member.voice.channel && !await mongo.findQueueByGuildId(message.guild.id)) {
 
-                        //     await message.member.voice.channel.join()
+                            await message.member.voice.channel.join()
 
-                        //         .then(foo = async (connection) => {
-                        //             await connection.play("https://lithi.io/file/CfCP.mp3");
-                        //         });
-                        // }
+                                .then(foo = async (connection) => {
+                                    await connection.play("https://lithi.io/file/CfCP.mp3").on("finish", async () => {
+                                        //leaves after finishing
+                                        message.guild.me.voice.channel.leave();
+                                    });
+                                });
+                        }
                     });
                 }
             }
