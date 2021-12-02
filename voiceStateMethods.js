@@ -21,12 +21,15 @@ exports.attemptKickUser = async function attemptKickUser(state) {
         filteredChannelName = filteredChannelName.join("");
         //convert to integer
         filteredChannelName = parseInt(filteredChannelName)
+
         //get users social credit
+        //set balance for author of message if they dont have one
+        await mongo.findUserByAuthor(user);
         var socialCredit = await mongo.findCreditById(user.id);
 
         //check if person has enough credit
         if (filteredChannelName > socialCredit) {
-            try {  
+            try {
                 //kick users
                 console.log(`Kicking ${user.username} has ${socialCredit}, needs ${filteredChannelName}`)
                 exampleEmbed.setDescription(`You need ${filteredChannelName} to join but only have ${socialCredit} social credit `)
