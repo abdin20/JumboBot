@@ -3,6 +3,8 @@ var mongo = require("../mongodb.js");
 const fs = require('fs');
 const Discord = require('discord.js');
 
+var users=[]
+var reasons=[];
 
 module.exports = {
     name: 'credit',
@@ -13,7 +15,11 @@ module.exports = {
         const filter = (reaction, user) => reaction.emoji.name === '🇹🇼';
         const reactionTime = 90000;
         var reactionCount = -1;
-        //set the embed message
+
+        //set balance for author of message if they dont have one
+        await mongo.findUserByAuthor(message.author);
+
+        //start building embed message
         var exampleEmbed = new Discord.MessageEmbed();
         exampleEmbed.setColor('#aa381e');
         exampleEmbed.setTitle("Social Credit");
@@ -54,11 +60,10 @@ module.exports = {
 
                 //get mentioned user object
                 user = message.mentions.users.first();
+                users.push(user)
                 let username = user.username;
                 let userId = user.id
                 let userAvatarURL=user.avatarURL();
-                //will make a new one if person doesnt have account
-                await mongo.findUserByAuthor(user);
                 exampleEmbed.setThumbnail(user.avatarURL());
                 exampleEmbed.setImage("https://i.imgur.com/xJlNJts.png");
                 //check if reason was given 
@@ -72,7 +77,8 @@ module.exports = {
                     args.shift();
                     reason = args.join(" ")
 
-                    exampleEmbed.setDescription(`React in the next ${reactionTime / 1000} seconds to increase ${username}'s social credit \n Reason: ${reason}`)
+                    reasons.push(reason)
+                    exampleEmbed.setDescription(`React in the next ${reactionTime / 1000} seconds to increase ${users[users.length-1]}'s social credit \n Reason: ${reasons[reasons.length-1]}`)
 
                     //promise for sending message
                     var reactionMessage = await message.channel.send(exampleEmbed)
@@ -85,28 +91,29 @@ module.exports = {
                     var tempMessage = new Discord.MessageEmbed();
                     tempMessage.setColor('#aa381e');
                     tempMessage.setTitle("Social Credit");
-                    tempMessage.setThumbnail(userAvatarURL);
+                    tempMessage.setThumbnail(users[users.length-1].avatarURL());
                     tempMessage.setImage("https://i.imgur.com/xJlNJts.png");
                     tempMessage.setFooter("China #1")
                     var newReason = reason
                     collector.on('collect', r => { console.log(`1 upvote`); reactionCount++; });
-                    //once time is over update users credit score
-
 
                     collector.on('end', async (collected) => {
                         console.log(`Collected ${reactionCount} items`)
 
                         //get users current score
-                        currentScore = await mongo.findCreditById(userId);
+                        currentScore = await mongo.findCreditById(users[0].id);
                         // increase by factor of number of emojis collected
                         currentScore += 100 * reactionCount;
 
                         //update users social credit
-                        await mongo.updateSocialCreditById(userId, { socialCredit: currentScore })
+                        await mongo.updateSocialCreditById(users[0].id, { socialCredit: currentScore })
 
-                        tempMessage.setDescription(`${username}'s score was increased by ${100 * reactionCount} \n Reason: ${newReason}`);
+                        tempMessage.setDescription(`${users[0].username}'s score was increased by ${100 * reactionCount} \n Reason: ${reasons[0]} \n New Social Credit Score: ${currentScore}`);
                         reactionMessage.edit(tempMessage);
 
+                        //remove first element from user and reasons array for future messages
+                        users.shift();
+                        reasons.shift()
                         //check if user is in channel
                         //https://lithi.io/file/7m7T.mp3
                         //check if person in channel
@@ -135,6 +142,7 @@ module.exports = {
 
                 //get mentioned user object
                 user = message.mentions.users.first();
+                users.push(user)
                 let username = user.username;
                 let userId = user.id
                 let userAvatarURL=user.avatarURL();
@@ -152,8 +160,10 @@ module.exports = {
                     args.shift();
                     args.shift();
                     reason = args.join(" ")
+                    //push to reason array
+                    reasons.push(reason);
 
-                    exampleEmbed.setDescription(`React in the next ${reactionTime / 1000} seconds to decrease ${username}'s social credit \n Reason: ${reason}`)
+                    exampleEmbed.setDescription(`React in the next ${reactionTime / 1000} seconds to decrease ${users[users.length-1]}'s social credit \n Reason: ${reasons[reasons.length-1]}`)
 
                     //promise for sending message
                     var reactionMessage = await message.channel.send(exampleEmbed)
@@ -166,7 +176,7 @@ module.exports = {
                     var otherMessage = new Discord.MessageEmbed();
                     otherMessage.setColor('#aa381e');
                     otherMessage.setTitle("Social Credit");
-                    otherMessage.setThumbnail(userAvatarURL);
+                    otherMessage.setThumbnail(users[users.length-1].avatarURL());
                     otherMessage.setImage("https://i.imgur.com/OR8IhE7.png");
                     otherMessage.setFooter("China #1")
 
@@ -176,16 +186,19 @@ module.exports = {
                         console.log(`Collected ${reactionCount} items`)
 
                         //get users current score
-                        currentScore = await mongo.findCreditById(userId);
+                        currentScore = await mongo.findCreditById(users[0].id);
                         // increase by factor of number of emojis collected
                         currentScore -= 100 * (reactionCount);
 
                         //update users social credit
-                        await mongo.updateSocialCreditById(userId, { socialCredit: currentScore })
+                        await mongo.updateSocialCreditById(users[0].id, { socialCredit: currentScore })
 
-                        otherMessage.setDescription(`${username}'s score was decreased by ${100 * (reactionCount)} \n Reason: ${reason}`);
+                        otherMessage.setDescription(`${users[0].username}'s score was decreased by ${100 * (reactionCount)} \n Reason: ${reasons[0]} \n New Social Credit Score: ${currentScore}`);
                         reactionMessage.edit(otherMessage);
 
+                        //shift the users and reasons
+                        users.shift();
+                        reasons.shift()
                         //check if user is in channel
                         //https://lithi.io/file/7m7T.mp3
                         //check if person in channel and music not playing
