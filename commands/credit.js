@@ -3,8 +3,8 @@ var mongo = require("../mongodb.js");
 const fs = require('fs');
 const Discord = require('discord.js');
 
-var users=[]
-var reasons=[];
+var users = []
+var reasons = [];
 
 
 module.exports = {
@@ -54,24 +54,24 @@ module.exports = {
             //check author of message if user didnt mention
             if (!message.mentions.users.first()) {
 
-                if(message.mentions.users.first().id===message.author.id){
-                    exampleEmbed.setDescription("you cant boost yourself u nerd");
-                    message.channel.send(exampleEmbed);
-                    return; //leave 
-                }
 
                 exampleEmbed.setDescription("you must mention a user");
                 message.channel.send(exampleEmbed);
                 return; //leave 
 
             } else {
+                if (message.mentions.users.first().id === message.author.id) {
+                    exampleEmbed.setDescription("you cant boost yourself u nerd");
+                    message.channel.send(exampleEmbed);
+                    return; //leave 
+                }
 
                 //get mentioned user object
                 user = message.mentions.users.first();
                 users.push(user)
                 let username = user.username;
                 let userId = user.id
-                let userAvatarURL=user.avatarURL();
+                let userAvatarURL = user.avatarURL();
                 exampleEmbed.setThumbnail(user.avatarURL());
                 exampleEmbed.setImage("https://i.imgur.com/xJlNJts.png");
                 //check if reason was given 
@@ -86,25 +86,25 @@ module.exports = {
                     reason = args.join(" ")
 
                     reasons.push(reason)
-                    exampleEmbed.setDescription(`React in the next ${reactionTime / 1000} seconds to increase ${users[users.length-1]}'s social credit \n Reason: ${reasons[reasons.length-1]}`)
+                    exampleEmbed.setDescription(`React in the next ${reactionTime / 1000} seconds to increase ${users[users.length - 1]}'s social credit \n Reason: ${reasons[reasons.length - 1]}`)
 
                     //promise for sending message
                     var reactionMessage = await message.channel.send(exampleEmbed)
                     //bot react to message
                     reactionMessage.react('🇹🇼')
                     //wait 15 seconds for emojis
-                    const collector = reactionMessage.createReactionCollector(filter, { time: reactionTime, dispose:true });
+                    const collector = reactionMessage.createReactionCollector(filter, { time: reactionTime, dispose: true });
 
                     //edit message showing how much it changed
                     var tempMessage = new Discord.MessageEmbed();
                     tempMessage.setColor('#aa381e');
                     tempMessage.setTitle("Social Credit");
-                    tempMessage.setThumbnail(users[users.length-1].avatarURL());
+                    tempMessage.setThumbnail(users[users.length - 1].avatarURL());
                     tempMessage.setImage("https://i.imgur.com/xJlNJts.png");
                     tempMessage.setFooter("China #1")
                     var newReason = reason
                     collector.on('collect', r => { console.log(`1 upvote`); reactionCount++; });
-                    collector.on('remove', (r) => {console.log('minus upvote');reactionCount--;});
+                    collector.on('remove', (r) => { console.log('minus upvote'); reactionCount--; });
 
                     collector.on('end', async (collected) => {
                         console.log(`Collected ${reactionCount} items`)
@@ -154,7 +154,7 @@ module.exports = {
                 users.push(user)
                 let username = user.username;
                 let userId = user.id
-                let userAvatarURL=user.avatarURL();
+                let userAvatarURL = user.avatarURL();
                 //create social credit if not found
                 await mongo.findUserByAuthor(user);
                 exampleEmbed.setThumbnail(user.avatarURL());
@@ -172,26 +172,26 @@ module.exports = {
                     //push to reason array
                     reasons.push(reason);
 
-                    exampleEmbed.setDescription(`React in the next ${reactionTime / 1000} seconds to decrease ${users[users.length-1]}'s social credit \n Reason: ${reasons[reasons.length-1]}`)
+                    exampleEmbed.setDescription(`React in the next ${reactionTime / 1000} seconds to decrease ${users[users.length - 1]}'s social credit \n Reason: ${reasons[reasons.length - 1]}`)
 
                     //promise for sending message
                     var reactionMessage = await message.channel.send(exampleEmbed)
                     //bot react to message
                     reactionMessage.react('🇹🇼')
                     //wait 15 seconds for emojis
-                    const collector = reactionMessage.createReactionCollector(filter, { time: reactionTime, dispose:true });
-                    
+                    const collector = reactionMessage.createReactionCollector(filter, { time: reactionTime, dispose: true });
+
                     //edit message showing how much it changed
                     var otherMessage = new Discord.MessageEmbed();
                     otherMessage.setColor('#aa381e');
                     otherMessage.setTitle("Social Credit");
-                    otherMessage.setThumbnail(users[users.length-1].avatarURL());
+                    otherMessage.setThumbnail(users[users.length - 1].avatarURL());
                     otherMessage.setImage("https://i.imgur.com/OR8IhE7.png");
                     otherMessage.setFooter("China #1")
 
                     //once time is over update users credit score
-                    collector.on('collect', r => {reactionCount++; });
-                    collector.on('remove', (reaction, user) => {reactionCount--;});
+                    collector.on('collect', r => { reactionCount++; });
+                    collector.on('remove', (reaction, user) => { reactionCount--; });
                     collector.on('end', foo = async collected => {
                         console.log(`Collected ${reactionCount} items`)
 
