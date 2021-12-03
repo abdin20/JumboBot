@@ -8,7 +8,7 @@ let timeoutID;
 //youtube imports
 const searchYoutube = require('youtube-api-v3-search');
 const urlParser = require("js-video-url-parser");
-const ytdl = require("ytdl-core");
+const ytdl = require('ytdl-core-discord');
 var auth = process.env.GOOGLE_API_2;
 
 const fs = require('fs');
@@ -246,7 +246,7 @@ module.exports = {
         message.channel.send(exampleEmbed);;
 
         //default seek to 0
-        let seek = 0;
+        var seek = 0;
 
         //check if options argument was passed through
         if (typeof options != 'undefined') {
@@ -274,8 +274,8 @@ module.exports = {
 
 
 
-        const dispatcher = connection.play(ytdl(url, { quality: "lowestaudio", begin: seek }), { seek: seek }).on("finish", async () => {
-
+        // const dispatcher = connection.play(ytdl(url, { quality: "lowestaudio", begin: seek }), { seek: seek }).on("finish", async () => {
+        const dispatcher= connection.play(await ytdl(url),{seek:seek,type:'opus'}).on("finish", async () => {
           //get the latest song queue
           results = await mongo.findQueueByGuildId(voiceChannel.guild.id)
           songs = results.songs
