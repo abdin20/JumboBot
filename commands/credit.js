@@ -53,6 +53,13 @@ module.exports = {
         } else if (args[0] === "add") {
             //check author of message if user didnt mention
             if (!message.mentions.users.first()) {
+
+                if(message.mentions.users.first().id===message.author.id){
+                    exampleEmbed.setDescription("you cant boost yourself u nerd");
+                    message.channel.send(exampleEmbed);
+                    return; //leave 
+                }
+
                 exampleEmbed.setDescription("you must mention a user");
                 message.channel.send(exampleEmbed);
                 return; //leave 
