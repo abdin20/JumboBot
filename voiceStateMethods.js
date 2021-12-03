@@ -11,9 +11,8 @@ exports.attemptKickUser = async function attemptKickUser(state) {
     //setup embed message
     var exampleEmbed = new Discord.MessageEmbed();
     exampleEmbed.setColor('#aa381e');
-    exampleEmbed.setTitle("Chinese Government");
+    exampleEmbed.setTitle("Government");
     exampleEmbed.setThumbnail("https://i.imgur.com/cUin9RC.jpeg");
-    exampleEmbed.setFooter("China #1")
 
 
     //check if channel name is made for social credit checking
@@ -32,8 +31,11 @@ exports.attemptKickUser = async function attemptKickUser(state) {
             try {
                 //kick users
                 console.log(`Kicking ${user.username} has ${socialCredit}, needs ${filteredChannelName}`)
-                exampleEmbed.setDescription(`You need ${filteredChannelName} to join but only have ${socialCredit} social credit `)
-                client.users.cache.get(user.id).send(exampleEmbed);
+                // exampleEmbed.setDescription(`You need ${filteredChannelName} to join but only have ${socialCredit} social credit `)
+                // client.users.cache.get(user.id).send(exampleEmbed);
+                channel=state.guild.channels.cache.filter(c => c.type === 'text').find(x => x.position == 0);
+                exampleEmbed.setDescription(`<@${user.id}> tried joining but didn't have enough credit`)
+                channel.send(exampleEmbed);
                 state.kick("Not enough social credit");
             } catch (error) {
                 console.log(error)
