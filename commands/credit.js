@@ -6,6 +6,7 @@ const Discord = require('discord.js');
 var users=[]
 var reasons=[];
 
+
 module.exports = {
     name: 'credit',
     description: '<args> possible args "score <user>", "add <user> <reason> ", remove <user> <reason>',
@@ -13,7 +14,7 @@ module.exports = {
 
 
         const filter = (reaction, user) => reaction.emoji.name === '🇹🇼';
-        const reactionTime = 90000;
+        const reactionTime = 5000;
         var reactionCount = -1;
 
         //set balance for author of message if they dont have one
@@ -85,7 +86,7 @@ module.exports = {
                     //bot react to message
                     reactionMessage.react('🇹🇼')
                     //wait 15 seconds for emojis
-                    const collector = reactionMessage.createReactionCollector(filter, { time: reactionTime });
+                    const collector = reactionMessage.createReactionCollector(filter, { time: reactionTime, dispose:true });
 
                     //edit message showing how much it changed
                     var tempMessage = new Discord.MessageEmbed();
@@ -96,6 +97,7 @@ module.exports = {
                     tempMessage.setFooter("China #1")
                     var newReason = reason
                     collector.on('collect', r => { console.log(`1 upvote`); reactionCount++; });
+                    collector.on('remove', (r) => {console.log('minus upvote');reactionCount--;});
 
                     collector.on('end', async (collected) => {
                         console.log(`Collected ${reactionCount} items`)
@@ -170,8 +172,8 @@ module.exports = {
                     //bot react to message
                     reactionMessage.react('🇹🇼')
                     //wait 15 seconds for emojis
-                    const collector = reactionMessage.createReactionCollector(filter, { time: reactionTime });
-
+                    const collector = reactionMessage.createReactionCollector(filter, { time: reactionTime, dispose:true });
+                    
                     //edit message showing how much it changed
                     var otherMessage = new Discord.MessageEmbed();
                     otherMessage.setColor('#aa381e');
@@ -181,7 +183,8 @@ module.exports = {
                     otherMessage.setFooter("China #1")
 
                     //once time is over update users credit score
-                    collector.on('collect', r => { console.log(`1 downvote`); reactionCount++; });
+                    collector.on('collect', r => {reactionCount++; });
+                    collector.on('remove', (reaction, user) => {reactionCount--;});
                     collector.on('end', foo = async collected => {
                         console.log(`Collected ${reactionCount} items`)
 
