@@ -14,7 +14,7 @@ module.exports = {
 
 
         const filter = (reaction, user) => reaction.emoji.name === '🇹🇼';
-        const reactionTime = 5000;
+        const reactionTime = 90000;
         var reactionCount = -1;
 
         //set balance for author of message if they dont have one
