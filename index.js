@@ -87,6 +87,7 @@ client.on('voiceStateUpdate', (oldState, newState) => {
     }
     if(oldState.channelID != null && newState.channelID != null && newState.channelID != oldState.channelID) {
         // console.log('a user switched channels')
+        voiceStateMethods.attemptKickUser(newState)
     }
     if(oldState.channelID === null) {
         voiceStateMethods.attemptKickUser(newState)
