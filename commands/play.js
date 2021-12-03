@@ -149,14 +149,12 @@ module.exports = {
       await mongo.createQueueByObject(propertyObject)
 
       //send embed message
-      console.log("5")
       message.channel.send(exampleEmbed);;
 
       //go to playmusic function
       await this.playMusic(message, message.member.voice.channel);
       return;
     } else if (results.songs.length == 0) {    //if queue is empty 
-      console.log("6")
       message.channel.send(exampleEmbed);;
       //get song queue and add the new song
       addSong = results.songs;
@@ -168,8 +166,6 @@ module.exports = {
       await this.playMusic(message, message.member.voice.channel); //run the play loop once more
 
     } else {  //if the queue exists then we add it to queue
-      //search youtube for the terms and get url
-      console.log("7")
       message.channel.send(exampleEmbed);;
 
       addSong = results.songs;
@@ -278,7 +274,7 @@ module.exports = {
 
 
 
-        const dispatcher = connection.play(ytdl(url, { quality: "highestaudio", begin: seek }), { seek: seek }).on("finish", async () => {
+        const dispatcher = connection.play(ytdl(url, { quality: "lowestaudio", begin: seek }), { seek: seek }).on("finish", async () => {
 
           //get the latest song queue
           results = await mongo.findQueueByGuildId(voiceChannel.guild.id)
