@@ -50,6 +50,11 @@ module.exports = {
             exampleEmbed.setDescription(`${user.username}'s social credit score is ${socialCredit}`)
             message.reply(exampleEmbed);
 
+            //rare command
+        } else if (args[0] === "reduce") {
+            exampleEmbed.setDescription(`Nice try jared`)
+            exampleEmbed.setImage("https://i.imgur.com/Rg0bh0c.png")
+            message.channel.send(exampleEmbed);
         } else if (args[0] === "add") {
             //check author of message if user didnt mention
             if (!message.mentions.users.first()) {
