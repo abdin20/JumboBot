@@ -272,10 +272,11 @@ module.exports = {
         }
 
 
-
+        //property for ytdl to seek video
+        var begin=seek+"s"
 
         // const dispatcher = connection.play(ytdl(url, { quality: "lowestaudio", begin: seek }), { seek: seek }).on("finish", async () => {
-        const dispatcher= connection.play(await ytdl(url),{seek:seek,type:'opus'}).on("finish", async () => {
+        const dispatcher= connection.play(await ytdl(url,[begin]),{seek:seek,type:'opus'}).on("finish", async () => {
           //get the latest song queue
           results = await mongo.findQueueByGuildId(voiceChannel.guild.id)
           songs = results.songs
