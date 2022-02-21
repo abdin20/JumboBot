@@ -23,8 +23,9 @@ module.exports = {
          await mongo.deleteQueueByObject({ guildId: message.guild.id });
          await message.member.voice.channel.join()
            .then(foo = async (connection) => {
-               await connection.play("https://lobfile.com/file/kKf0.mp3");
-               message.guild.me.voice.channel.leave();
+            await connection.play("https://lobfile.com/file/2J2V.mp3").on("finish", async ()=>{
+                message.guild.me.voice.channel.leave();
+            })
            });
         
 	},
