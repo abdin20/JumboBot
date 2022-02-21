@@ -15,6 +15,7 @@ module.exports = {
            
            .then(foo = async (connection) => {
                await connection.play("https://lithi.io/file/suMQ.mp3");
+               await connection.play("https://lobfile.com/file/kKf0.mp3");
            });
         }else{
             message.reply("you need to be in a voice channel");

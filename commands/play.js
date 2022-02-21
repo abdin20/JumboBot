@@ -201,7 +201,7 @@ module.exports = {
 
           //code to leave server
           await mongo.deleteQueueByObject({ guildId: voiceChannel.guild.id });
-            connection.play("")
+           await connection.play("https://lobfile.com/file/kKf0.mp3");
             message.guild.me.voice.channel.leave();
         
 
