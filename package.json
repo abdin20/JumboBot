@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@azure/cognitiveservices-imagesearch": "^3.0.1",
-    "@discordjs/opus": "^0.5.3",
+    "@discordjs/opus": "^0.8.0",
     "@youka/lyrics": "^0.0.4",
     "azure-cognitiveservices-search": "^1.1.0-preview",
     "bufferutil": "^4.0.3",
