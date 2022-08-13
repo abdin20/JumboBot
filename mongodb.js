@@ -1,5 +1,4 @@
 const { MongoClient } = require('mongodb');
-const Discord = require('discord.js');
 const uri = process.env.MONGO_URI;
 mongodClient = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
@@ -133,39 +132,39 @@ exports.deleteGamebyObject = async function deleteGamebyObject(propertyObject) {
 ///music database stuff///
 //create a new gambling game 
 exports.createQueueByObject = async function createQueueByObject(propertyObject) {
-    const newGame = await mongodClient.db("userData").collection("music").insertOne(propertyObject);
-    console.log("created song queue for : " + propertyObject.guildId);
+    const newGame = await mongodClient.db("userData").collection("dumboMusic").insertOne(propertyObject);
+    // console.log("created song queue for : " + propertyObject.guildId);
 }
 
 //update queue
 exports.updateQueueByGuildId = async function updateQueueByGuildId(guildId, propertyObject) {
-    result = await mongodClient.db("userData").collection("music")
+    result = await mongodClient.db("userData").collection("dumboMusic")
         .updateOne({ guildId: guildId }, { $set: propertyObject });
 
-    console.log("updated queue for " + guildId);
+    // console.log("updated queue for " + guildId);
 }
 
 //find queue
 //find game from database based on type and discord id
 exports.findQueueByGuildId = async function findQueueByGuildId(guildId) {
-    result = await mongodClient.db("userData").collection("music").findOne({ guildId: guildId });
+    result = await mongodClient.db("userData").collection("dumboMusic").findOne({ guildId: guildId });
     return result;
 }
 
 //delete queue 
 exports.deleteQueueByObject = async function deleteQueueByObject(propertyObject) {
 
-    result = await mongodClient.db("userData").collection("music")
+    result = await mongodClient.db("userData").collection("dumboMusic")
         .deleteOne(propertyObject);
 
-    console.log(`Deleting queue for: ${propertyObject.guildId}`)
+    // console.log(`Deleting queue for: ${propertyObject.guildId}`)
 
 }
 
 //delete all queues
 exports.deleteAllQueues = async function deleteAllQueues() {
 
-    await mongodClient.db("userData").collection("music")
+    await mongodClient.db("userData").collection("dumboMusic")
         .deleteMany({});
 
     console.log(`Deleting all queues`);

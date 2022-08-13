@@ -1,32 +1,47 @@
-//db imoprts
-var mongo = require("../mongodb.js");
-const Discord = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
+const { joinVoiceChannel, VoiceConnectionStatus, AudioPlayerStatus, createAudioPlayer, createAudioResource, StreamType, getVoiceConnection } = require('@discordjs/voice');
 
+var mongo = require("../mongodb.js");
 play = require("./play.js");
 module.exports = {
-	name: 'stop',
-	description: 'stops all music and disconnects bot',
-	async execute(message, args) {
-        //display nicely with embeds
-        exampleEmbed = new Discord.MessageEmbed();
-        exampleEmbed.setColor('#0099ff');
-        exampleEmbed.setTitle("Music");
+    data: new SlashCommandBuilder()
+        .setName('stop')
+        .setDescription('Stops playback and deletes queue'),
 
-        //check if in voice channel
-        if (!message.member.voice.channel) {
-            exampleEmbed.setDescription("You need to be in a voice channel");
-            message.channel.send(exampleEmbed);;
-            return;
-        } 
-        
-        //delete queue and leave
-         await mongo.deleteQueueByObject({ guildId: message.guild.id });
-         await message.member.voice.channel.join()
-           .then(foo = async (connection) => {
-            await connection.play("https://lobfile.com/file/2J2V.mp3").on("finish", async ()=>{
-                message.guild.me.voice.channel.leave();
-            })
-           });
-        
-	},
+    // main function
+    async execute(interaction) {
+        const exampleEmbed = new EmbedBuilder()
+            .setColor('#ff0000')
+            .setTitle("Error")
+            .setColor('#0099ff')
+            .setAuthor({ name: interaction.user.username, iconURL: interaction.user.displayAvatarURL() })
+        if (!interaction.member.voice.channelId) {
+            exampleEmbed.setDescription("You need to be in a voice channel!")
+            interaction.reply({ embeds: [exampleEmbed] })
+            return
+        }
+
+        const results = await mongo.findQueueByGuildId(interaction.guildId);
+        if (!results) {
+            exampleEmbed.setDescription("Queue doesnt exist");
+            interaction.reply({ embeds: [exampleEmbed], ephemeral: true })
+
+            //if there is a queue greater than 1
+        } else {
+            exampleEmbed.setColor('#0099ff');
+            exampleEmbed.setDescription(`Ended Queue`);
+            interaction.reply({ embeds: [exampleEmbed] })
+
+            const connection = await getVoiceConnection(interaction.guildId);
+            console.log(`Deleting queue for ${interaction.guild.name}`)
+            await mongo.deleteQueueByObject(results)
+            connection.destroy();
+            // await mongo.updateQueueByGuildId(interaction.guildId, { songs: [] })
+
+            // play.playMusic(interaction)
+        }
+
+    },
+
 };

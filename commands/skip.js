@@ -1,44 +1,45 @@
-//db imoprts
+const { SlashCommandBuilder } = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
 var mongo = require("../mongodb.js");
-const Discord = require('discord.js');
-
 play = require("./play.js");
-
 module.exports = {
-    name: 'skip',
-    description: 'skips the current song',
-    async execute(message, args) {
+    data: new SlashCommandBuilder()
+        .setName('skip')
+        .setDescription('Skips current song'),
 
-        //display nicely with embeds
-        exampleEmbed = new Discord.MessageEmbed();
-        exampleEmbed.setColor('#0099ff');
-        exampleEmbed.setTitle("Music");
-
-        //check if in voice channel
-        if (!message.member.voice.channel) {
-            exampleEmbed.setDescription("You need to be in a voice channel");
-            message.channel.send(exampleEmbed);;
-            return;
+    // main function
+    async execute(interaction) {
+        const exampleEmbed = new EmbedBuilder()
+            .setColor('#ff0000')
+            .setTitle("Error")
+            .setColor('#0099ff')
+            .setAuthor({ name: interaction.user.username, iconURL: interaction.user.displayAvatarURL() })
+        if (!interaction.member.voice.channelId) {
+            exampleEmbed.setDescription("You need to be in a voice channel!")
+            interaction.reply({ embeds: [exampleEmbed], ephemeral: true })
+            return
         }
-        results = await mongo.findQueueByGuildId(message.guild.id);
-        //if there is no queue
+
+        results = await mongo.findQueueByGuildId(interaction.guildId);
         if (!results) {
-            exampleEmbed.setDescription("Queue doesnt exist"); 
-            message.channel.send(exampleEmbed);;
+            exampleEmbed.setDescription("Queue doesnt exist");
+            interaction.reply({ embeds: [exampleEmbed], ephemeral: true })
 
             //if there is a queue greater than 1
-        } else{
+        } else {
             //shift the array 
             songs = results.songs;
-            song= songs.shift();
-
-            exampleEmbed.setDescription("Skipped "+ song);
-            console.log("Skipped "+ song);
-            message.channel.send(exampleEmbed);;
+            song = songs.shift();
+            exampleEmbed.setColor('#0099ff');
+            exampleEmbed.setDescription(`Skipped [${song.title}](${song.url})`);
+            console.log("Skipped " + song.title);
+            interaction.reply({ embeds: [exampleEmbed] })
             //update to db and play music
-            await mongo.updateQueueByGuildId(message.guild.id, { songs: songs })
-            play.playMusic(message,message.member.voice.channel,{skip:true});
+            console.log(`Updating queue for ${interaction.guild.name}`)
+            await mongo.updateQueueByGuildId(interaction.guildId, { songs: songs })
+            play.playMusic(interaction, true);
         }
 
     },
+
 };

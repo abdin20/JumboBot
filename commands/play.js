@@ -1,371 +1,241 @@
-//db imoprts
-var mongo = require("../mongodb.js");
-const Discord = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
+const { joinVoiceChannel, VoiceConnectionStatus, AudioPlayerStatus, createAudioPlayer, createAudioResource, StreamType, getVoiceConnection } = require('@discordjs/voice');
+const { EmbedBuilder } = require('discord.js');
 
-
-// timeout function variable
-let timeoutID;
-//youtube imports
+const ytdl = require('ytdl-core');
+var youtubeID = require('youtube-id');
 const searchYoutube = require('youtube-api-v3-search');
 const urlParser = require("js-video-url-parser");
-const ytdl = require('ytdl-core');
-var auth = process.env.GOOGLE_API_2;
+var mongo = require("../mongodb.js");
+var auth = process.env.GOOGLE_API;
 
-const fs = require('fs');
 module.exports = {
-  name: 'play',
-  description: '$play <search term for youtube>',
-  async execute(message, args) {
-    //join the arguements
-    search = args.join(" ");
-    //display nicely with embeds
-    var exampleEmbed = new Discord.MessageEmbed();
-    exampleEmbed.setColor('#0099ff');
-    exampleEmbed.setTitle("Music");
+    data: new SlashCommandBuilder()
+        .setName('play')
+        .setDescription('Searches YouTube for a song and plays it')
+        .addStringOption(option =>
+            option.setName('search')
+                .setDescription('Search term for music')
+                .setRequired(true)),
 
-    //check if arguemnts are there
-    if (args.length < 1) {
-      exampleEmbed.setDescription("Please enter a search term");
-      console.log("1")
-      message.channel.send(exampleEmbed);
-      return
-    }
+    // main function
+    async execute(interaction) {
+        if (!interaction.member.voice.channelId) {
+            interaction.reply({ content: "You need to be in a voice channel!", ephemeral: true })
+            return
+        }
+        // get search from user
+        const searchQuery = interaction.options.getString('search')
 
-    //check if in voice channel
-    if (!message.member.voice.channel) {
-      exampleEmbed.setDescription("You need to be in a voice channel");
-      console.log("2")
-      message.channel.send(exampleEmbed);
-      return;
-    }
+        //get queryType
+        const queryType = await (this.getQueryType(searchQuery))
+        let title = searchQuery;
+        let url = ""
+        let query = ""
+        let youtubeResult
+        let thumbnail=""
+        // types of query are youtube link, direct link, or search
+        switch (queryType) {
+            case 'youtube':
+                youtubeResult = await this.getYoutubeInfo(urlParser.parse(searchQuery).id)
+                url = youtubeResult.url
+                title = youtubeResult.title
+                thumbnail=youtubeResult.thumbnail
+                query = 'youtube'
+                break;
 
-    //song url
-    var url = ""
-    var title = search
-
-    var queueOptions;
-
-    var timeStamp = "";
-    /////////////if its a youtube link or not a link and a search term, use yts library
-    if ((search.indexOf("http") > -1 && search.indexOf("yout") > -1) || search.indexOf("http") < 0) {
-
-
-      searchQuery = search;//the query is the search term by default
-
-
-
-      //check for time stamp in video
-      if (search.indexOf("?t=") > -1) {
-        searchQuery = search.substring(0, search.indexOf("?t=")) //edit teh query to get rid of time stamp
-        timeStamp = "?t=" + search.substring(search.indexOf("?t=") + 3) //get time stamp part of url
-        console.log("time stamp detected");
-      }
-
-      //check for time stamp in video other format
-      if (search.indexOf("&t=") > -1) {
-        searchQuery = search.substring(0, search.indexOf("&t=")) //edit teh query to get rid of time stamp
-        timeStamp = "?t=" + search.substring(search.indexOf("&t=") + 3) //get time stamp part of url
-        console.log("time stamp detected");
-      }
-
-      //check for playlist link and remove playlist part of link
-      if (searchQuery.indexOf("&list=") > -1) {
-        searchQuery = searchQuery.substring(0, searchQuery.indexOf("&list=")) //edit teh query to get rid of time stamp
-        console.log("playlist link found, new link : " + searchQuery);
-      }
-
-      //check for playlist link and remove playlist part of link other format
-      if (searchQuery.indexOf("?list=") > -1) {
-        searchQuery = searchQuery.substring(0, searchQuery.indexOf("?list=")) //edit teh query to get rid of time stamp
-        console.log("playlist link found, new link : " + searchQuery);
-      }
-
-
-      //if its a youtube link we dont need to search for it again
-      if (search.indexOf("http") >= 0) {
-        url = searchQuery + timeStamp;
-
-        //get data from ytdl libarary
-        data = await ytdl.getInfo(searchQuery)
-        title = data.videoDetails.title;
-
-      } else {
-
-        //options for the youtube query. 
-        //q property is the search term we got from user
-        const options = {
-          q: searchQuery,
-          part: 'snippet',
-          type: 'video',
-          maxResults: 1
+            // direct link
+            case 'direct':
+                title = searchQuery;
+                url = searchQuery
+                query = "direct"
+                return
+                break;
+                
+            // defaults to searching youtube
+            default:
+                youtubeResult = await this.getYoutubeInfo(searchQuery)
+                url = youtubeResult.url
+                title = youtubeResult.title
+                thumbnail= youtubeResult.thumbnail
+                query = 'youtube'
+            // const searchResult = await this.getYouTubeSearchResults(searchQuery)
+            // url = "https://www.youtube.com/watch?v=" + searchResult.items[0].id.videoId
+            // title = searchResult.items[0].snippet.title
+            // query = "youtube"
         }
 
-        //search 
+        // process this info into queue
+        await this.processQueue(interaction, title, url, query,thumbnail);
+    },
+    // can take videoId or search params
+    async getYoutubeInfo(videoId) {
+        const searchResult = await this.getYouTubeSearchResults(videoId)
+        url = "https://www.youtube.com/watch?v=" + searchResult.items[0].id.videoId
+        title = searchResult.items[0].snippet.title
+        query = "youtube"
+        thumbnail=searchResult.items[0].snippet.thumbnails.medium.url
+        return { url: url, title: title, query: query,thumbnail:thumbnail}
+
+    },
+    async getYouTubeSearchResults(searchTerm) {
+
+        const options = {
+            q: searchTerm,
+            part: 'snippet',
+            type: 'video',
+            maxResults: 1
+        }
         let r = await searchYoutube(auth, options).catch((err) => {
-          console.error(err);
+            console.error(err);
         });
 
         //check to see google api accepted request
         if (typeof r.items === 'undefined') {
-          exampleEmbed.setDescription("Quota error");
-          console.log("3")
-          message.channel.send(exampleEmbed);;
-          auth = process.env.GOOGLE_API;//if not reset api key to other account
-          r = await searchYoutube(auth, options)
+            console.log("Quota error");
+            auth = process.env.GOOGLE_API_2;//if not reset api key to other account
+            r = await searchYoutube(auth, options)
         }
 
         //check to see if there are results
         if (typeof r.items[0] === 'undefined') {
-          exampleEmbed.setDescription("No results error");
-          console.log("4")
-          message.channel.send(exampleEmbed);;
-          return;
+            console.log("No results error");
+            return;
         }
 
-        //adds time stamp to if there was one
-        url = "https://www.youtube.com/watch?v=" + r.items[0].id.videoId + timeStamp//get url
-        title = r.items[0].snippet.title //get title
+        return r;
+    },
+    async processQueue(interaction, title, url, queryType,thumbnail) {
+        console.log(`${interaction.user.username} requested ${title}`)
+        const exampleEmbed = new EmbedBuilder()
+        exampleEmbed
+            .setColor('#0099ff')
+            .setDescription("🎶 Adding " +"[" + title+ "]" +"("+url+") 🎶")
+            .setURL(url)
+            .setAuthor({ name: interaction.user.username, iconURL: interaction.user.displayAvatarURL() })
+        await interaction.reply({ embeds: [exampleEmbed] });
 
+        const songObject = { url: url, title: title, queryType: queryType,thumbnail:thumbnail }
+        results = await mongo.findQueueByGuildId(interaction.guildId);
+        if (!results) {
+            console.log(`Creating queue for ${interaction.guild.name}`)
+            //if no queue, make one, add to db, and run teh playmusic
+            propertyObject = new Object();
+            propertyObject.guildId = interaction.guildId
+            propertyObject.songs = [songObject]
+            propertyObject.loop = false; //loop defaults to off
 
-      }
+            //create queue in db
+            await mongo.createQueueByObject(propertyObject)
+            //go to playmusic function
+            await this.playMusic(interaction);
+        } else if (results.songs.length == 0) {    //if queue is empty 
 
+            //get song queue and add the new song
+            addSong = results.songs;
+            addSong.push(songObject)
 
-    } else {
-      url = search;
-    }
-    //////////////////////////////////
-    exampleEmbed.setDescription(`Added [${title}]` + "(" + url + ")")
-    console.log(`Added [${title}]` + "(" + url + ")");
-    //get queue from db if it doesnt exists
-    results = await mongo.findQueueByGuildId(message.guild.id);
-    if (!results) {
-      //if no queue, make one, add to db, and run teh playmusic
-      propertyObject = new Object();
-      propertyObject.guildId = message.guild.id
-      propertyObject.songs = [url]
-      propertyObject.loop = false; //loop defaults to off
+            //push it to db
+            console.log(`Updating queue for ${interaction.guild.name}`)
+            await mongo.updateQueueByGuildId(interaction.guildId, { songs: addSong })
 
-      //create queue in db
-      await mongo.createQueueByObject(propertyObject)
+            await this.playMusic(interaction); //run the play loop once more
 
-      //send embed message
-      message.channel.send(exampleEmbed);;
+        } else {  //if the queue exists then we add it to queue
 
-      //go to playmusic function
-      await this.playMusic(message, message.member.voice.channel);
-      return;
-    } else if (results.songs.length == 0) {    //if queue is empty 
-      message.channel.send(exampleEmbed);;
-      //get song queue and add the new song
-      addSong = results.songs;
-      addSong.push(url)
+            addSong = results.songs;
+            addSong.push(songObject)
+            console.log(`Updating queue for ${interaction.guild.name}`)
+            await mongo.updateQueueByGuildId(interaction.guildId, { songs: addSong })
 
-      //push it to db
-      await mongo.updateQueueByGuildId(message.guild.id, { songs: addSong })
-
-      await this.playMusic(message, message.member.voice.channel); //run the play loop once more
-
-    } else {  //if the queue exists then we add it to queue
-      message.channel.send(exampleEmbed);;
-
-      addSong = results.songs;
-      addSong.push(url)
-      await mongo.updateQueueByGuildId(message.guild.id, { songs: addSong })
-
-      return;
-    }
-  },
-
-  async playMusic(message, voiceChannel, options) {
-    //get voice channel
-    // voiceChannel = message.member.voice.channel;
-
-    //join channel and play
-    await voiceChannel.join().then(foo = async connection => {
-      results = await mongo.findQueueByGuildId(voiceChannel.guild.id);
-
-      //delete the queue if the size is 0
-      if (!results || results.songs.length == 0) {
-        var delay = 45 //in seconds
-        //if were in method from running a skip method, no need for delay
-        if (typeof options !== 'undefined' && options.skip === true) {
-          delay = 0;
         }
+    },
+    async playMusic(interaction, skip = false) {
 
-        // After the queue has ended
-        timeoutID = setTimeout(async () => {
+        const exampleEmbed = new EmbedBuilder()
+        .setColor('#0099ff')
+        .setAuthor({ name: interaction.user.username, iconURL: interaction.user.displayAvatarURL() })
+        var delay = 45;
+        let connection = getVoiceConnection(interaction.guildId);
 
-          //code to leave server
-          await mongo.deleteQueueByObject({ guildId: voiceChannel.guild.id });
-        //play see you next time at end of playing
-          await connection.play("https://lobfile.com/file/2J2V.mp3").on("finish", async ()=>{
-            message.guild.me.voice.channel.leave();
-        })
-        
-
-        }, delay * 1000) // You should use the time in ms
-        return
-      } else { ///runs if queue is not empty
-        // If the bot is used again
-        clearTimeout(timeoutID)
-        timeoutID = undefined
-      }
-      /////
-
-
-
-
-
-
-      /////
-
-      //get the song queue
-      playingSongs = results.songs;
-      //shift the queue
-      url = playingSongs.shift();
-      console.log("joined channel");
-      //dispatcher plays the audio
-
-
-      //send to discord
-      exampleEmbed = new Discord.MessageEmbed();
-      exampleEmbed.setColor('#0099ff');
-      exampleEmbed.setTitle("Music")
-
-
-      //IF YOUTUBe LINK
-      if (url.indexOf("yout") > -1) {
-
-        //get data from ytdl libarary
-        data = await ytdl.getInfo(url)
-
-        title = data.videoDetails.title;
-
-        //parse link
-        exampleEmbed.setDescription(`Playing [${title}]` + "(" + url + ")")
-        console.log(`Playing [${title}]` + "(" + url + ")");
-        message.channel.send(exampleEmbed);;
-
-        //default seek to 0
-        var seek = 0;
-
-        //check if options argument was passed through
-        if (typeof options != 'undefined') {
-          seek = options.seconds; //set seek to options passed through
-          console.log("seek to " + seek + " seconds")
+        const results = await mongo.findQueueByGuildId(interaction.guildId);
+        //delete the queue if the size is 0
+        if (!results || results.songs.length === 0) {
+            if (skip) {
+                connection.destroy();
+            }
+            timeoutID = setTimeout(async () => {
+                connection.destroy();
+            }, delay * 1000)
+            return
         }
-
-        //check for time stamp in video
-        if (url.indexOf("?t=") > -1) {
-
-          seek = url.substring(url.indexOf("?t=") + 3) //get time stamp part of url
-          url = url.substring(0, url.indexOf("?t=")) //edit teh query to get rid of time stamp
-          console.log("time stamp parsed for " + seek + "s");
+        if (!connection) {
+            connection = joinVoiceChannel({
+                channelId: interaction.member.voice.channelId,
+                guildId: interaction.guildId,
+                adapterCreator: interaction.channel.guild.voiceAdapterCreator,
+            });
         }
-
-        //check for time stamp in video
-        if (url.indexOf("?t=") > -1) {
-
-          seek = url.substring(url.indexOf("?t=") + 3) //get time stamp part of url
-          url = url.substring(0, url.indexOf("?t=")) //edit teh query to get rid of time stamp
-          console.log("time stamp parsed for " + seek + "s");
-          console.log("new url" + url)
-        }
-
-
-        //property for ytdl to seek video
-        var begin=seek+"s"
-
-        // const dispatcher = connection.play(ytdl(url, { quality: "lowestaudio", begin: seek }), { seek: seek }).on("finish", async () => {
-        const dispatcher= connection.play(ytdl(url, { quality: "lowestaudio", begin: seek }), { seek: seek }).on("finish", async () => {
-          //get the latest song queue
-          results = await mongo.findQueueByGuildId(voiceChannel.guild.id)
-          songs = results.songs
-          //get the url for the first song in queue, whilst removing it from the array
-
-          //if loop isnt enabled, shift the queue 
-          if (!results.loop) {
-            url = songs.shift();
-
-          }
-
-          console.log(`Finished ${title}`)
-          //update the queue with the removed first song
-          await mongo.updateQueueByGuildId(voiceChannel.guild.id, { songs: songs })
-
-          this.playMusic(message, voiceChannel);
-
-        }).on("error", async error => {
-          message.channel.send("Error youtube")  ///youtube error method
-
-          console.log(error);
-          results = await mongo.findQueueByGuildId(message.guild.id)
-          songs = results.songs
-          //get the url for the first song in queue, whilst removing it from the array
-          url = songs.shift();
-          console.log(`Finished ${title}`)
-          //update the queue with the removed first song
-          await mongo.updateQueueByGuildId(message.guild.id, { songs: songs })
-          this.playMusic(message, voiceChannel);
-
-
+        // on disconnect stop queue
+        connection.on(VoiceConnectionStatus.Disconnected, async (oldState, newState) => {
+            // Seems to be a real disconnect which SHOULDN'T be recovered from
+            const results = await mongo.findQueueByGuildId(interaction.guildId)
+            console.log(`Deleting queue for ${interaction.guild.name}`)
+            await mongo.deleteQueueByObject(results)
+            connection.destroy();
         });
 
-        //else its a direct link//////////////////////////////////////////////////////////////
-      } else {
-        //play the audio with link
-        exampleEmbed.setURL(url);
-        exampleEmbed.setDescription(`${url}`)
-        message.channel.send(exampleEmbed);;
-        console.log("Playing (" + url + ")")
-        const dispatcher = connection.play(url).on("finish", async () => {
+        //get the song queue
+        playingSong = results.songs.shift();
+        //shift the queue
+        title = playingSong.title
+        url = playingSong.url
+        thumbnail=playingSong.thumbnail
+        console.log("Playing " +"[" + title+ "]" +"("+url+")")
+        exampleEmbed.setDescription("🎶 Playing " +"[" + title+ "]" +"("+url+") 🎶")
+        exampleEmbed.setURL(url)
+        exampleEmbed.setImage(thumbnail)
 
-          //get the latest song queue
-          results = await mongo.findQueueByGuildId(message.guild.id)
-          songs = results.songs
-          //get the url for the first song in queue, whilst removing it from the array
+        const player = createAudioPlayer();
 
+        const resource = createAudioResource(ytdl(url, { quality: "lowestaudio" }));
 
-          //if loop isnt enabled, shift the queue 
-          if (!results.loop) {
-            url = songs.shift();
-          }
-          console.log(`Finished ${url}`)
-          //update the queue with the removed first song
-          await mongo.updateQueueByGuildId(message.guild.id, { songs: songs })
-          this.playMusic(message, voiceChannel);
+        interaction.channel.send({ embeds: [exampleEmbed] })
 
+        player.play(resource)
+        connection.subscribe(player)
+        player.on(AudioPlayerStatus.Idle, (async () => {
+            const results = await mongo.findQueueByGuildId(interaction.guildId)
+            songs = results.songs
+            songs.shift()
+            console.log(`Updating queue for ${interaction.guild.name}`)
+            await mongo.updateQueueByGuildId(interaction.guildId, { songs: songs })
+            this.playMusic(interaction)
+            player.stop();
+           
+        }));
 
-        }).on("error", async error => {
-          message.channel.send("Error direct link")
-
-          results = await mongo.findQueueByGuildId(message.guild.id)
-          songs = results.songs
-          //get the url for the first song in queue, whilst removing it from the array
-          url = songs.shift();
-          //update the queue with the removed first song
-          await mongo.updateQueueByGuildId(message.guild.id, { songs: songs })
-
-          this.playMusic(message, voiceChannel);
-
-
+        player.on('error', error => {
+            console.error(`Error: ${error.message}`);
+            player.stop();
         });
-      }
-      ////////////main error of playMessage method
-    }).catch(async err => {
-      console.log(err)
 
+    },
+    async getQueryType(searchQuery) {
 
-      results = await mongo.findQueueByGuildId(message.guild.id)
-      songs = results.songs
-      //get the url for the first song in queue, whilst removing it from the array
-      url = songs.shift();
-      //update the queue with the removed first song
-      await mongo.updateQueueByGuildId(message.guild.id, { songs: songs })
-      this.playMusic(message, voiceChannel);
+        //if its not a link
+        if (searchQuery.indexOf("http") < 0) {
+            return null
+        }
+        // guaranteed link 
+        const urlType = urlParser.parse(searchQuery)
 
-    });
+        // if cannot parse the link it must be a direct link
+        if (urlType === undefined || typeof (urlType) === 'undefined') {
+            return 'direct'
+        }
+        // else the link was parsed and was a valid search result
+        return urlType.provider;
 
-  },
-
+    }
 };
