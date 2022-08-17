@@ -24,7 +24,7 @@ for (const file of commandFiles) {
 
 
 const rest = new REST({ version: '10' }).setToken(token);
-
+console.log(`Number of guilds ${guilds.length}`)
 for (guild of guilds) {
     rest.put(Routes.applicationGuildCommands(clientId, guild), { body: commands })
         .then(() => console.log('Successfully registered application commands.'))

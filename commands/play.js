@@ -1,8 +1,9 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { joinVoiceChannel, VoiceConnectionStatus, AudioPlayerStatus, createAudioPlayer, createAudioResource, StreamType, getVoiceConnection } = require('@discordjs/voice');
+const { joinVoiceChannel, VoiceConnectionStatus, AudioPlayerStatus, createAudioPlayer, createAudioResource, StreamType, getVoiceConnection, entersState } = require('@discordjs/voice');
 const { EmbedBuilder } = require('discord.js');
 
-const ytdl = require('ytdl-core');
+// const ytdl = require('ytdl-core');
+const ytdl = require("discord-ytdl-core");
 var youtubeID = require('youtube-id');
 const searchYoutube = require('youtube-api-v3-search');
 const urlParser = require("js-video-url-parser");
@@ -33,14 +34,14 @@ module.exports = {
         let url = ""
         let query = ""
         let youtubeResult
-        let thumbnail=""
+        let thumbnail = ""
         // types of query are youtube link, direct link, or search
         switch (queryType) {
             case 'youtube':
                 youtubeResult = await this.getYoutubeInfo(urlParser.parse(searchQuery).id)
                 url = youtubeResult.url
                 title = youtubeResult.title
-                thumbnail=youtubeResult.thumbnail
+                thumbnail = youtubeResult.thumbnail
                 query = 'youtube'
                 break;
 
@@ -51,13 +52,13 @@ module.exports = {
                 query = "direct"
                 return
                 break;
-                
+
             // defaults to searching youtube
             default:
                 youtubeResult = await this.getYoutubeInfo(searchQuery)
                 url = youtubeResult.url
                 title = youtubeResult.title
-                thumbnail= youtubeResult.thumbnail
+                thumbnail = youtubeResult.thumbnail
                 query = 'youtube'
             // const searchResult = await this.getYouTubeSearchResults(searchQuery)
             // url = "https://www.youtube.com/watch?v=" + searchResult.items[0].id.videoId
@@ -66,7 +67,7 @@ module.exports = {
         }
 
         // process this info into queue
-        await this.processQueue(interaction, title, url, query,thumbnail);
+        await this.processQueue(interaction, title, url, query, thumbnail);
     },
     // can take videoId or search params
     async getYoutubeInfo(videoId) {
@@ -74,8 +75,8 @@ module.exports = {
         url = "https://www.youtube.com/watch?v=" + searchResult.items[0].id.videoId
         title = searchResult.items[0].snippet.title
         query = "youtube"
-        thumbnail=searchResult.items[0].snippet.thumbnails.medium.url
-        return { url: url, title: title, query: query,thumbnail:thumbnail}
+        thumbnail = searchResult.items[0].snippet.thumbnails.medium.url
+        return { url: url, title: title, query: query, thumbnail: thumbnail }
 
     },
     async getYouTubeSearchResults(searchTerm) {
@@ -105,17 +106,17 @@ module.exports = {
 
         return r;
     },
-    async processQueue(interaction, title, url, queryType,thumbnail) {
+    async processQueue(interaction, title, url, queryType, thumbnail) {
         console.log(`${interaction.user.username} requested ${title}`)
         const exampleEmbed = new EmbedBuilder()
         exampleEmbed
             .setColor('#0099ff')
-            .setDescription("🎶 Adding " +"[" + title+ "]" +"("+url+") 🎶")
+            .setDescription("🎶 Adding " + "[" + title + "]" + "(" + url + ") 🎶")
             .setURL(url)
             .setAuthor({ name: interaction.user.username, iconURL: interaction.user.displayAvatarURL() })
         await interaction.reply({ embeds: [exampleEmbed] });
 
-        const songObject = { url: url, title: title, queryType: queryType,thumbnail:thumbnail }
+        const songObject = { url: url, title: title, queryType: queryType, thumbnail: thumbnail }
         results = await mongo.findQueueByGuildId(interaction.guildId);
         if (!results) {
             console.log(`Creating queue for ${interaction.guild.name}`)
@@ -151,74 +152,104 @@ module.exports = {
         }
     },
     async playMusic(interaction, skip = false) {
+        try {
+            const exampleEmbed = new EmbedBuilder()
+                .setColor('#0099ff')
+                .setAuthor({ name: interaction.user.username, iconURL: interaction.user.displayAvatarURL() })
+            var delay = 5;
 
-        const exampleEmbed = new EmbedBuilder()
-        .setColor('#0099ff')
-        .setAuthor({ name: interaction.user.username, iconURL: interaction.user.displayAvatarURL() })
-        var delay = 45;
-        let connection = getVoiceConnection(interaction.guildId);
+            const results = await mongo.findQueueByGuildId(interaction.guildId);
+            //delete the queue if the size is 0
+            if (!results || (results && results.songs.length === 0)) {
+                const newresults = await mongo.findQueueByGuildId(interaction.guildId)
+                if (newresults) {
+                    console.log(`Deleting queue for ${interaction.guild.name}`)
+                    await mongo.deleteQueueByObject(newresults)
+                }
+                    let checkConnection = getVoiceConnection(interaction.guildId);
+                    console.log(checkConnection._state.status)
+                    if (checkConnection && (checkConnection._state.status === "ready")) checkConnection.disconnect();
 
-        const results = await mongo.findQueueByGuildId(interaction.guildId);
-        //delete the queue if the size is 0
-        if (!results || results.songs.length === 0) {
-            if (skip) {
-                connection.destroy();
+                // timeoutID = setTimeout(async () => {
+                //     console.log('timeout function ran')
+                //     const results = await mongo.findQueueByGuildId(interaction.guildId);
+                //     let checkConnection = getVoiceConnection(interaction.guildId);
+                //     if (!results && checkConnection && (checkConnection._state.status !== "ready")) checkConnection.disconnect();
+                // }, delay * 1000)
+                return
             }
-            timeoutID = setTimeout(async () => {
-                connection.destroy();
-            }, delay * 1000)
-            return
-        }
-        if (!connection) {
-            connection = joinVoiceChannel({
-                channelId: interaction.member.voice.channelId,
-                guildId: interaction.guildId,
-                adapterCreator: interaction.channel.guild.voiceAdapterCreator,
+
+            let connection = getVoiceConnection(interaction.guildId);
+            if (typeof connection === 'undefined' || (typeof connection !== 'undefined' && (connection._state.status === "disconnected" || connection._state.status === "signalling"))) {
+                console.log('connecting')
+                connection = joinVoiceChannel({
+                    channelId: interaction.member.voice.channelId,
+                    guildId: interaction.guildId,
+                    adapterCreator: interaction.channel.guild.voiceAdapterCreator,
+                });
+
+                await entersState(connection, VoiceConnectionStatus.Ready, 5_000)
+            }
+            // if (!connection) {
+            //     connection = joinVoiceChannel({
+            //         channelId: interaction.member.voice.channelId,
+            //         guildId: interaction.guildId,
+            //         adapterCreator: interaction.channel.guild.voiceAdapterCreator,
+            //     });
+            // }
+            // on disconnect stop queue
+
+
+            connection.on('error', err => { console.log(err) })
+
+            //get the song queue
+            playingSong = results.songs.shift();
+            //shift the queue
+            title = playingSong.title
+            url = playingSong.url
+            thumbnail = playingSong.thumbnail
+            console.log("Playing " + "[" + title + "]" + "(" + url + ")")
+            exampleEmbed.setDescription("🎶 Playing " + "[" + title + "]" + "(" + url + ") 🎶")
+            exampleEmbed.setURL(url)
+            exampleEmbed.setImage(thumbnail)
+
+            const player = createAudioPlayer();
+            // const resource = createAudioResource(ytdl(url, { filter: 'audioonly'}));
+            const resource = createAudioResource(ytdl(url, {filter: "audioonly", opusEncoded: true, encoderArgs: ['-af', 'bass=g=10,dynaudnorm=f=200']}));
+            
+            interaction.channel.send({ embeds: [exampleEmbed] })
+
+            player.play(resource)
+            connection.subscribe(player)
+
+            player.on(AudioPlayerStatus.Idle, (async () => {
+                const results = await mongo.findQueueByGuildId(interaction.guildId)
+                songs = results.songs
+                songs.shift()
+                console.log(`Updating queue for ${interaction.guild.name}`)
+                await mongo.updateQueueByGuildId(interaction.guildId, { songs: songs })
+                this.playMusic(interaction)
+                player.stop();
+
+            }));
+            player.on('error', async error => {
+                console.error(`Error: ${error.message}`);
+                player.stop();
+                const nextresults = await mongo.findQueueByGuildId(interaction.guildId)
+                if (nextresults) {
+                    console.log(`Deleting queue for ${interaction.guild.name}`)
+                    await mongo.deleteQueueByObject(nextresults)
+                }
             });
+        } catch (err) {
+            console.log(err)
+            const nextresults = await mongo.findQueueByGuildId(interaction.guildId)
+            if (nextresults) {
+                console.log(`Deleting queue for ${interaction.guild.name}`)
+                await mongo.deleteQueueByObject(nextresults)
+            }
+
         }
-        // on disconnect stop queue
-        connection.on(VoiceConnectionStatus.Disconnected, async (oldState, newState) => {
-            // Seems to be a real disconnect which SHOULDN'T be recovered from
-            const results = await mongo.findQueueByGuildId(interaction.guildId)
-            console.log(`Deleting queue for ${interaction.guild.name}`)
-            await mongo.deleteQueueByObject(results)
-            connection.destroy();
-        });
-
-        //get the song queue
-        playingSong = results.songs.shift();
-        //shift the queue
-        title = playingSong.title
-        url = playingSong.url
-        thumbnail=playingSong.thumbnail
-        console.log("Playing " +"[" + title+ "]" +"("+url+")")
-        exampleEmbed.setDescription("🎶 Playing " +"[" + title+ "]" +"("+url+") 🎶")
-        exampleEmbed.setURL(url)
-        exampleEmbed.setImage(thumbnail)
-
-        const player = createAudioPlayer();
-
-        const resource = createAudioResource(ytdl(url, { quality: "lowestaudio" }));
-
-        interaction.channel.send({ embeds: [exampleEmbed] })
-
-        player.play(resource)
-        connection.subscribe(player)
-        player.on(AudioPlayerStatus.Idle, (async () => {
-            const results = await mongo.findQueueByGuildId(interaction.guildId)
-            songs = results.songs
-            songs.shift()
-            console.log(`Updating queue for ${interaction.guild.name}`)
-            await mongo.updateQueueByGuildId(interaction.guildId, { songs: songs })
-            this.playMusic(interaction)
-            player.stop();
-           
-        }));
-
-        player.on('error', error => {
-            console.error(`Error: ${error.message}`);
-            player.stop();
-        });
 
     },
     async getQueryType(searchQuery) {

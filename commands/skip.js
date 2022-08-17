@@ -20,6 +20,7 @@ module.exports = {
             return
         }
 
+
         results = await mongo.findQueueByGuildId(interaction.guildId);
         if (!results) {
             exampleEmbed.setDescription("Queue doesnt exist");
@@ -27,6 +28,10 @@ module.exports = {
 
             //if there is a queue greater than 1
         } else {
+
+            if(results.songs.length===0){
+                return
+            }
             //shift the array 
             songs = results.songs;
             song = songs.shift();

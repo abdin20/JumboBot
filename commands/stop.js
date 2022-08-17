@@ -22,6 +22,7 @@ module.exports = {
             return
         }
 
+
         const results = await mongo.findQueueByGuildId(interaction.guildId);
         if (!results) {
             exampleEmbed.setDescription("Queue doesnt exist");
@@ -36,7 +37,8 @@ module.exports = {
             const connection = await getVoiceConnection(interaction.guildId);
             console.log(`Deleting queue for ${interaction.guild.name}`)
             await mongo.deleteQueueByObject(results)
-            connection.destroy();
+            if (typeof connection === 'undefined') return
+            connection.disconnect();
             // await mongo.updateQueueByGuildId(interaction.guildId, { songs: [] })
 
             // play.playMusic(interaction)
