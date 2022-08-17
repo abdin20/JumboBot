@@ -87,7 +87,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
 		return
 	}
 
-	if (newState.channelId === oldState.channelId) {
+	if (newState.channelId === oldState.channelId && oldState.channelId!==null) {
 		// console.log('a user didnt move')
 		return
 	}
