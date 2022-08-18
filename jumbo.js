@@ -54,8 +54,9 @@ client.on('interactionCreate', async interaction => {
 });
 
 
-const getRandomSoundEffect = (playerId) => {
+const getRandomSoundEffect = (playerId,userName) => {
 	// if shane
+	console.log(`Playing effect for ${userName}`)
 	if(playerId==="545042126644445184"){
 		return 'https://lobfile.com/file/0qDy.mp3'
 	}
@@ -68,14 +69,20 @@ const getRandomSoundEffect = (playerId) => {
 	}//shane chen
 	if(playerId==="116672531661979652"){
 		return 'https://lobfile.com/file/IYrZ.mp3'
+	}//carrie
+	if(playerId==="313780633518473218"){
+		return 'https://lobfile.com/file/1SDy.mp3'
 	}
+	
 
 	// return 'https://lobfile.com/file/wKG2.ogg'
 
 	//winner , ads, fna2 eerie, bruh, boing, gmod, vine, clash, metalgear, tf2 notif, 
+	const clipNames=['winner' , 'ads', 'fna2 eerie', 'bruh', 'boing', 'gmod', 'vine', 'clash', 'metalgear', 'tf2 notif']
 	const clips = ['https://lobfile.com/file/0qDy.mp3','https://lobfile.com/file/E9oa.mp3', 'https://lobfile.com/file/zylm.mp3', 'https://lobfile.com/file/NWF0g.mp3', 'https://lobfile.com/file/nWGC.mp3', 'https://lobfile.com/file/L005.mp3','https://lobfile.com/file/c617.mp3','https://lobfile.com/file/tDKk.mp3','https://lobfile.com/file/1xCr.mp3', 'https://lobfile.com/file/0zc1.mp3'   ]
-
-	return clips[Math.floor(Math.random() * clips.length)];
+	const rand=Math.floor(Math.random() * clips.length)
+	console.log(`Effect: ${clipNames[rand]}`)
+	return clips[rand];
 }
 
 
@@ -107,8 +114,6 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
 	if(random>=4 &&!isAlwaysPlay){
 		return
 	}
-	console.log(`Playing sound effect for ${newState.member.user.username}`)
-
 
 
 	// console.log("CHECK FOR UNDEFINED")
@@ -134,7 +139,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
 	// 	adapterCreator: newState.guild.voiceAdapterCreator,
 	// });
 	let newplayer = createAudioPlayer();
-	let resource = createAudioResource(getRandomSoundEffect(newState.member.id));
+	let resource = createAudioResource(getRandomSoundEffect(newState.member.id,newState.member.user.username));
 	newplayer.on(AudioPlayerStatus.Idle, (async () => {
 		const results = await mongo.findQueueByGuildId(newState.guild.id);
 		if (!results) checkConnection.disconnect();
