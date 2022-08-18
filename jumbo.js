@@ -9,7 +9,7 @@ const client = new Client({ intents: ["Guilds", "GuildVoiceStates", "GuildMember
 var mongo = require("./mongodb.js");
 
 const token = process.env.BOT_TOKEN
-// shane, connor, aaron
+// shane london, connor, aaron
 const alwaysPlaySoundEffectIds=['545042126644445184','144260548245061632','146425358927790081']
 
 client.commands = new Collection();
@@ -67,8 +67,8 @@ const getRandomSoundEffect = (playerId) => {
 	}
 
 	// return 'https://lobfile.com/file/wKG2.ogg'
-	//winner , run and slip,fna2 eerie, bruh, boing, gmod
-	const clips = ['https://lobfile.com/file/0qDy.mp3', 'https://lobfile.com/file/6iLnq.mp3', 'https://lobfile.com/file/zylm.mp3', 'https://lobfile.com/file/NWF0g.mp3', 'https://lobfile.com/file/nWGC.mp3', 'https://lobfile.com/file/L005.mp3']
+	//winner , ads, fna2 eerie, bruh, boing, gmod, vine, clash, metalgear, tf2 notif, 
+	const clips = ['https://lobfile.com/file/0qDy.mp3','https://lobfile.com/file/E9oa.mp3', 'https://lobfile.com/file/zylm.mp3', 'https://lobfile.com/file/NWF0g.mp3', 'https://lobfile.com/file/nWGC.mp3', 'https://lobfile.com/file/L005.mp3','https://lobfile.com/file/c617.mp3','https://lobfile.com/file/tDKk.mp3','https://lobfile.com/file/1xCr.mp3', 'https://lobfile.com/file/0zc1.mp3'   ]
 
 	return clips[Math.floor(Math.random() * clips.length)];
 }
@@ -103,7 +103,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
 	if(random>=4 &&!isAlwaysPlay){
 		return
 	}
-	console.log("Playing sound effect")
+	console.log(`Playing sound effect for ${newState.member.user.username}`)
 
 
 
