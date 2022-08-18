@@ -216,7 +216,7 @@ module.exports = {
             const player = createAudioPlayer();
             // const resource = createAudioResource(ytdl(url, { filter: 'audioonly'}));
             // const resource = createAudioResource(ytdl(url, {filter: "audioonly", opusEncoded: true, encoderArgs: ['-af', 'bass=g=10']}));
-            const resource = createAudioResource(ytdl(url, {filter: "audioonly", opusEncoded: true, encoderArgs: ['-af','']}));
+            const resource = createAudioResource(ytdl(url, {filter: "audioonly", opusEncoded: true, encoderArgs: '-af'}));
             
             interaction.channel.send({ embeds: [exampleEmbed] })
 
