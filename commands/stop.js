@@ -13,7 +13,7 @@ module.exports = {
     async execute(interaction) {
         const exampleEmbed = new EmbedBuilder()
             .setColor('#ff0000')
-            .setTitle("Error")
+            .setTitle("Music")
             .setColor('#0099ff')
             .setAuthor({ name: interaction.user.username, iconURL: interaction.user.displayAvatarURL() })
         if (!interaction.member.voice.channelId) {
@@ -22,7 +22,12 @@ module.exports = {
             return
         }
 
-
+        const connection = await getVoiceConnection(interaction.guildId);
+        if (typeof connection !== 'undefined'){
+            connection.disconnect();
+        }
+     
+        //delete queue
         const results = await mongo.findQueueByGuildId(interaction.guildId);
         if (!results) {
             exampleEmbed.setDescription("Queue doesnt exist");
@@ -34,11 +39,9 @@ module.exports = {
             exampleEmbed.setDescription(`Ended Queue`);
             interaction.reply({ embeds: [exampleEmbed] })
 
-            const connection = await getVoiceConnection(interaction.guildId);
             console.log(`Deleting queue for ${interaction.guild.name}`)
             await mongo.deleteQueueByObject(results)
-            if (typeof connection === 'undefined') return
-            connection.disconnect();
+
             // await mongo.updateQueueByGuildId(interaction.guildId, { songs: [] })
 
             // play.playMusic(interaction)
