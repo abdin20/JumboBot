@@ -11,7 +11,7 @@ var mongo = require("./mongodb.js");
 const token = process.env.BOT_TOKEN
 // shane london, connor, aaron
 // const alwaysPlaySoundEffectIds=['545042126644445184','144260548245061632','146425358927790081']
-const alwaysPlaySoundEffectIds=['545042126644445184']
+const alwaysPlaySoundEffectIds = ['545042126644445184']
 
 client.commands = new Collection();
 const commandsPath = path.join(__dirname, 'commands');
@@ -54,42 +54,59 @@ client.on('interactionCreate', async interaction => {
 });
 
 
-const getRandomSoundEffect = (playerId,userName) => {
+const getRandomSoundEffect = (playerId, userName) => {
 	// if shane
 	console.log(`Playing effect for ${userName}`)
-	if(playerId==="545042126644445184"){
-		return 'https://lobfile.com/file/0qDy.mp3'
+	const playerRand = Math.floor(Math.random() * 101)
+	if (playerRand <= 35) {
+		console.log("playing custom user song")
+		// shane
+		if (playerId === "545042126644445184") {
+			return 'https://lobfile.com/file/0qDy.mp3'
+		}
+		//connor
+		if (playerId === "144260548245061632") {
+			return 'https://lobfile.com/file/WxhT.mp3'
+		}//aaron
+		if (playerId === "146425358927790081") {
+			return 'https://lobfile.com/file/K8oM.mp3'
+		}//shane chen
+		if (playerId === "116672531661979652") {
+			return 'https://lobfile.com/file/IYrZ.mp3'
+		}//carrie
+		if (playerId === "313780633518473218") {
+			return 'https://lobfile.com/file/1SDy.mp3'
+		}//hady
+		if (playerId === "310442661343526915") {
+			return 'https://lobfile.com/file/8OHx.mp3'
+		}//noah
+		if (playerId === "331589423546368001") {
+			return 'https://lobfile.com/file/eSQe.mp3'
+		}//riley
+		if (playerId === "152558158806646784") {
+			let playerSongs = ['https://lobfile.com/file/LrLR.mp3', 'https://lobfile.com/file/t7b2.mp3',
+				'https://lithi.pw/file/A12T', 'https://lobfile.com/file/vaS7D.mp3', 'https://lobfile.com/file/Wsq3.mp3',
+				'https://lobfile.com/file/hxSK.mp3', 'https://lobfile.com/file/bCXd.mp3']
+			const playerSongRand = Math.floor(Math.random() * playerSongs.length)
+			return playerSongs[playerSongRand]
+		}//jason
+		if (playerId === "152989214932336640") {
+			return 'https://lobfile.com/file/U2KP.mp3'
+		}//jet
+		if (playerId === "134127232904986624") {
+			return 'https://lobfile.com/file/tPAd.mp3'
+		}
 	}
-	//connor
-	if(playerId==="144260548245061632"){
-		return 'https://lobfile.com/file/WxhT.mp3'
-	}//aaron
-	if(playerId==="146425358927790081"){
-		return 'https://lobfile.com/file/K8oM.mp3'
-	}//shane chen
-	if(playerId==="116672531661979652"){
-		return 'https://lobfile.com/file/IYrZ.mp3'
-	}//carrie
-	if(playerId==="313780633518473218"){
-		return 'https://lobfile.com/file/1SDy.mp3'
-	}//hady
-	if(playerId==="310442661343526915"){
-		return 'https://lobfile.com/file/8OHx.mp3'
-	}//noah
-	if(playerId==="331589423546368001"){
-		return 'https://lobfile.com/file/eSQe.mp3'
-	}//riley
-	if(playerId==="152558158806646784"){
-		return 'https://lobfile.com/file/4MU3.mp3'
-	}
-	
+
 
 	// return 'https://lobfile.com/file/wKG2.ogg'
 
 	//winner , ads, fna2 eerie, bruh, boing, gmod, vine, clash, metalgear, tf2 notif, 
-	const clipNames=['winner' , 'ads', 'fna2 eerie', 'bruh', 'boing', 'gmod', 'vine', 'clash', 'metalgear', 'tf2 notif']
-	const clips = ['https://lobfile.com/file/0qDy.mp3','https://lobfile.com/file/E9oa.mp3', 'https://lobfile.com/file/zylm.mp3', 'https://lobfile.com/file/NWF0g.mp3', 'https://lobfile.com/file/nWGC.mp3', 'https://lobfile.com/file/L005.mp3','https://lobfile.com/file/c617.mp3','https://lobfile.com/file/tDKk.mp3','https://lobfile.com/file/1xCr.mp3', 'https://lobfile.com/file/0zc1.mp3'   ]
-	const rand=Math.floor(Math.random() * clips.length)
+	const clipNames = ['winner', 'ads', 'fna2 eerie', 'bruh', 'boing', 'gmod', 'vine', 'clash', 'metalgear', 'tf2 notif',
+		'boing','something in my a']
+	const clips = ['https://lobfile.com/file/0qDy.mp3', 'https://lobfile.com/file/E9oa.mp3', 'https://lobfile.com/file/zylm.mp3', 'https://lobfile.com/file/NWF0g.mp3', 'https://lobfile.com/file/nWGC.mp3', 'https://lobfile.com/file/L005.mp3', 'https://lobfile.com/file/c617.mp3', 'https://lobfile.com/file/tDKk.mp3', 'https://lobfile.com/file/1xCr.mp3',
+		'https://lobfile.com/file/0zc1.mp3', 'https://lobfile.com/file/H9Tr.mp3','https://lobfile.com/file/SZYf.mp3']
+	const rand = Math.floor(Math.random() * clips.length)
 	console.log(`Effect: ${clipNames[rand]}`)
 	return clips[rand];
 }
@@ -107,7 +124,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
 		return
 	}
 
-	if (newState.channelId === oldState.channelId && oldState.channelId!==null) {
+	if (newState.channelId === oldState.channelId && oldState.channelId !== null) {
 		// console.log('a user didnt move')
 		return
 	}
@@ -120,7 +137,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
 	const isAlwaysPlay = alwaysPlaySoundEffectIds.includes(newState.member.id)
 	const random = Math.floor(Math.random() * 11)
 	// will always run if its shane
-	if(random>=4 &&!isAlwaysPlay){
+	if (random >= 4 && !isAlwaysPlay) {
 		return
 	}
 
@@ -148,7 +165,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
 	// 	adapterCreator: newState.guild.voiceAdapterCreator,
 	// });
 	let newplayer = createAudioPlayer();
-	let resource = createAudioResource(getRandomSoundEffect(newState.member.id,newState.member.user.username));
+	let resource = createAudioResource(getRandomSoundEffect(newState.member.id, newState.member.user.username));
 	newplayer.on(AudioPlayerStatus.Idle, (async () => {
 		const results = await mongo.findQueueByGuildId(newState.guild.id);
 		if (!results) checkConnection.disconnect();
