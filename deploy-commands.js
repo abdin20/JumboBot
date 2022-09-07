@@ -9,8 +9,8 @@ const fs = require('fs')
 const token = process.env.BOT_TOKEN
 const clientId = "894068368120905788"
 
-// goomba, goon, ja nai, beever,"azn thugs",'abdins server'
-const guilds = ["635966592303366154", "171025594979581960" , "683543800294932585","591460882819579914","152559548874489856",'1008090190931308624']
+// goomba, goon, ja nai, beever,"azn thugs",'abdins server','bruzz
+const guilds = ["635966592303366154", "171025594979581960" , "683543800294932585","591460882819579914","152559548874489856",'1008090190931308624','690738765827932161']
 
 const commands = [];
 const commandsPath = path.join(__dirname, 'commands');
