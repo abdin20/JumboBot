@@ -6,6 +6,11 @@ const { joinVoiceChannel, VoiceConnectionStatus, AudioPlayerStatus, createAudioP
 const fs = require('fs')
 const { createReadStream } = require('fs')
 const client = new Client({ intents: ["Guilds", "GuildVoiceStates", "GuildMembers", 'GuildEmojisAndStickers', 'GuildPresences', 'GuildMessageReactions', 'GuildMessageReactions'] });
+
+const soundImports=require('./sounds.js')
+const clipNames=soundImports.clipNames
+const clips=soundImports.clips
+
 var mongo = require("./mongodb.js");
 
 const token = process.env.BOT_TOKEN
@@ -58,7 +63,7 @@ const getRandomSoundEffect = (playerId, userName) => {
 	// if shane
 	console.log(`Playing effect for ${userName}`)
 	const playerRand = Math.floor(Math.random() * 101)
-	if (playerRand <= 40) {
+	if (playerRand <= 48) {
 		console.log("playing custom user song")
 		// shane
 		if (playerId === "545042126644445184") {
@@ -96,16 +101,17 @@ const getRandomSoundEffect = (playerId, userName) => {
 		if (playerId === "134127232904986624") {
 			return 'https://lobfile.com/file/tPAd.mp3'
 		}
+		// abdin
+		if(playerId ==="163368896844267521"){
+			let playerSongs = ['https://lobfile.com/file/xeOe.wav','https://lobfile.com/file/imx8.mp3']
+			const playerSongRand = Math.floor(Math.random() * playerSongs.length)
+			return playerSongs[playerSongRand]
+		}
 	}
 
 
 	// return 'https://lobfile.com/file/wKG2.ogg'
 
-	//winner , ads, fna2 eerie, bruh, boing, gmod, vine, clash, metalgear, tf2 notif, 
-	const clipNames = ['winner', 'ads', 'fna2 eerie', 'bruh', 'boing', 'gmod', 'vine', 'clash', 'metalgear', 'tf2 notif',
-		'boing','something in my a']
-	const clips = ['https://lobfile.com/file/0qDy.mp3', 'https://lobfile.com/file/E9oa.mp3', 'https://lobfile.com/file/zylm.mp3', 'https://lobfile.com/file/NWF0g.mp3', 'https://lobfile.com/file/nWGC.mp3', 'https://lobfile.com/file/L005.mp3', 'https://lobfile.com/file/c617.mp3', 'https://lobfile.com/file/tDKk.mp3', 'https://lobfile.com/file/1xCr.mp3',
-		'https://lobfile.com/file/0zc1.mp3', 'https://lobfile.com/file/H9Tr.mp3','https://lobfile.com/file/SZYf.mp3']
 	const rand = Math.floor(Math.random() * clips.length)
 	console.log(`Effect: ${clipNames[rand]}`)
 	return clips[rand];

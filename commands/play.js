@@ -225,6 +225,7 @@ module.exports = {
 
             player.on(AudioPlayerStatus.Idle, (async () => {
                 const results = await mongo.findQueueByGuildId(interaction.guildId)
+                if(!results?.songs) return;
                 songs = results.songs
                 songs.shift()
                 console.log(`Updating queue for ${interaction.guild.name}`)
@@ -234,7 +235,7 @@ module.exports = {
 
             }));
             player.on('error', async error => {
-                console.error(`Error: ${error.message}`);
+                console.error(`Player Error: ${error.message}`);
                 player.stop();
                 const nextresults = await mongo.findQueueByGuildId(interaction.guildId)
                 if (nextresults) {
@@ -243,6 +244,7 @@ module.exports = {
                 }
             });
         } catch (err) {
+            console.log("Play.js error catcher: ")
             console.log(err)
             const nextresults = await mongo.findQueueByGuildId(interaction.guildId)
             if (nextresults) {

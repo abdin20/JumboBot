@@ -2,7 +2,7 @@
   "name": "dumbo",
   "version": "1.0.0",
   "description": "discord bot",
-  "main": "index.js",
+  "main": "jumbo.js",
   "dependencies": {
     "@discordjs/opus": "^0.8.0",
     "@discordjs/voice": "^0.11.0",
@@ -20,7 +20,7 @@
     "path": "^0.12.7",
     "youtube-api-v3-search": "^1.2.1",
     "youtube-id": "^1.0.0",
-    "ytdl-core": "^4.11.0"
+    "ytdl-core": "^4.11.2"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
