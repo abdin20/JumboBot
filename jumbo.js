@@ -81,9 +81,6 @@ const getRandomSoundEffect = (playerId, userName) => {
 		}//carrie
 		if (playerId === "313780633518473218") {
 			return 'https://lobfile.com/file/1SDy.mp3'
-		}//hady
-		if (playerId === "310442661343526915") {
-			return 'https://lobfile.com/file/8OHx.mp3'
 		}//noah
 		if (playerId === "331589423546368001") {
 			return 'https://lobfile.com/file/eSQe.mp3'
