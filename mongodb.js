@@ -3,13 +3,11 @@ const Discord = require('discord.js');
 const uri = process.env.MONGO_URI;
 mongodClient = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
-//automatically connect to the db
-(async function start() {
+
+
+exports.connect=async()=>{
     await mongodClient.connect();
-
-})();
-
-
+}
 
 //add user to db
 //parameter of user is object form
@@ -203,3 +201,4 @@ exports.deletePlaylistByObject = async function deletePlaylistByObject(propertyO
     console.log(`Deleting playlist for: ${propertyObject.id}`)
 
 }
+

@@ -35,7 +35,13 @@ for (const file of commandFiles) {
 client.once('ready', foo = async () => {
     console.log('Ready!');
     client.user.setActivity("Type $help for commands");
-    await mongo.deleteAllQueues();
+    try{
+        await mongo.connect();
+        await mongo.deleteAllQueues();
+    }catch{
+        console.log("error connecting/deleting mongo")
+    }
+  
 });
 
 client.once('reconnecting', () => {
