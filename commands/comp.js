@@ -1,4 +1,4 @@
-const { SlashCommandBuilder,EmbedBuilder } = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -10,14 +10,18 @@ module.exports = {
     //jet , abdn, carrie, connor, nic
     msg += `<@134127232904986624> <@163368896844267521> <@313780633518473218> <@144260548245061632> <@181589300754907137> \n WANNA COMP/VAL`;
 
-    const exampleEmbed = new EmbedBuilder().setColor("#25cf0e").setAuthor({
-      name: interaction.user.username,
-      iconURL: interaction.user.displayAvatarURL(),
-    });
-    exampleEmbed.setTitle("🔫 --COMP/VAL-- 🔫" )
-    exampleEmbed.setDescription(
-       msg
-      );
+    const exampleEmbed = new EmbedBuilder()
+      .setColor("#25cf0e")
+      .setAuthor({
+        name: interaction.user.username,
+        iconURL: interaction.user.displayAvatarURL(),
+      })
+      .setTitle("🔫 --COMP/VAL-- 🔫")
+      .setDescription(msg)
+      .setFooter({
+        text: "🕊️ Long Live Jumbo 2020-2023 🕊️",
+        iconURL: "https://i.imgur.com/qJMLlxG.jpeg",
+      });
 
     await interaction.reply({ embeds: [exampleEmbed] });
   },

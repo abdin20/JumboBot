@@ -1,4 +1,4 @@
-const { SlashCommandBuilder,EmbedBuilder } = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -9,14 +9,20 @@ module.exports = {
     let msg = `<@152558158806646784> <@331589423546368001> <@559892149307572234> <@166703160876990464>`;
     //jet , abdn, shane, jason, milton,david w
     msg += `<@134127232904986624> <@163368896844267521> <@545042126644445184> <@152989214932336640> <@199708115434864641> <@150029401973587969>`;
-    msg+=`\n ATTENTION ALL DISTINGUINED GENTLEMEN`
+    msg += `\n ATTENTION ALL DISTINGUINED GENTLEMEN`;
 
-    const exampleEmbed = new EmbedBuilder().setColor("2003fc").setAuthor({
-      name: interaction.user.username,
-      iconURL: interaction.user.displayAvatarURL(),
-    });
-    exampleEmbed.setTitle("🎰  --GAMBLERS--  🎲");
-    exampleEmbed.setDescription(msg);
+    const exampleEmbed = new EmbedBuilder()
+      .setColor("2003fc")
+      .setAuthor({
+        name: interaction.user.username,
+        iconURL: interaction.user.displayAvatarURL(),
+      })
+      .setTitle("🎰  --GAMBLERS--  🎲")
+      .setDescription(msg)
+      .setFooter({
+        text: "🕊️ Long Live Jumbo 2020-2023 🕊️",
+        iconURL: "https://i.imgur.com/qJMLlxG.jpeg",
+      });
 
     await interaction.reply({ embeds: [exampleEmbed] });
   },

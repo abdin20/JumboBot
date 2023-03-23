@@ -121,14 +121,17 @@ module.exports = {
   },
   async processQueue(interaction, title, url, queryType, thumbnail) {
     console.log(`${interaction.user.username} requested ${title}`);
-    const exampleEmbed = new EmbedBuilder();
-    exampleEmbed
+    const exampleEmbed = new EmbedBuilder()
       .setColor("#0099ff")
-      .setDescription("🎶 Adding " + "[" + title + "]" + "(" + url + ") 🎶")
+      .setDescription("Adding " + "[" + title + "]" + "(" + url + ")")
       .setURL(url)
       .setAuthor({
         name: interaction.user.username,
         iconURL: interaction.user.displayAvatarURL(),
+      })
+      .setFooter({
+        text: "🕊️ Long Live Jumbo 2020-2023 🕊️",
+        iconURL: "https://i.imgur.com/qJMLlxG.jpeg",
       });
     await interaction.reply({ embeds: [exampleEmbed] });
 
@@ -177,6 +180,10 @@ module.exports = {
       const exampleEmbed = new EmbedBuilder().setColor("#0099ff").setAuthor({
         name: interaction.user.username,
         iconURL: interaction.user.displayAvatarURL(),
+      })
+      .setFooter({
+        text: "🕊️ Long Live Jumbo 🕊️",
+        iconURL: "https://i.imgur.com/qJMLlxG.jpeg",
       });
       var delay = 5;
 
@@ -232,7 +239,7 @@ module.exports = {
       thumbnail = playingSong.thumbnail;
       console.log("Playing " + "[" + title + "]" + "(" + url + ")");
       exampleEmbed.setDescription(
-        "🎶 Playing " + "[" + title + "]" + "(" + url + ") 🎶"
+        "Playing " + "[" + title + "]" + "(" + url + ")"
       );
       exampleEmbed.setTitle("🎶 Music 🎶" )
       exampleEmbed.setURL(url);
