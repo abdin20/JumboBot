@@ -11,7 +11,7 @@ const {
 } = require("@discordjs/voice");
 const { EmbedBuilder } = require("discord.js");
 
-const play = require('play-dl')
+const play = require("play-dl");
 var youtubeID = require("youtube-id");
 const searchYoutube = require("youtube-api-v3-search");
 const urlParser = require("js-video-url-parser");
@@ -40,7 +40,31 @@ module.exports = {
     }
     // get search from user
     const searchQuery = interaction.options.getString("search");
-
+    const { title, url, query, thumbnail } = await this.parseSearchQuery(
+      searchQuery
+    );
+    interaction.reply({ content: "Success!", ephemeral: true });
+    interaction.deleteReply();
+    // process this info into queue
+    await this.processQueue(interaction, title, url, query, thumbnail);
+  },
+  // can take videoId or search params
+  async getQueryType(searchQuery) {
+    //if its not a link
+    if (searchQuery.indexOf("http") < 0) {
+      return null;
+    }
+    // guaranteed link
+    const urlType = urlParser.parse(searchQuery);
+    console.log(urlType)
+    // if cannot parse the link it must be a direct link
+    if (urlType === undefined || typeof urlType === "undefined") {
+      return "direct";
+    }
+    // else the link was parsed and was a valid search result
+    return urlType.provider;
+  },
+  async parseSearchQuery(searchQuery) {
     //get queryType
     const queryType = await this.getQueryType(searchQuery);
     let title = searchQuery;
@@ -80,13 +104,12 @@ module.exports = {
       // title = searchResult.items[0].snippet.title
       // query = "youtube"
     }
-
-    // process this info into queue
-    await this.processQueue(interaction, title, url, query, thumbnail);
+    return { url, title, thumbnail, query };
   },
-  // can take videoId or search params
   async getYoutubeInfo(videoId) {
-    const searchResult = await this.getYouTubeSearchResults(videoId);
+    const searchResult = await this.getYouTubeSearchResults(
+      videoId.substring(0, 1) === "-" ? videoId.substring(1) : videoId
+    );
     url = "https://www.youtube.com/watch?v=" + searchResult.items[0].id.videoId;
     title = searchResult.items[0].snippet.title;
     query = "youtube";
@@ -119,12 +142,22 @@ module.exports = {
 
     return r;
   },
-  async processQueue(interaction, title, url, queryType, thumbnail) {
+  async processQueue(
+    interaction,
+    title,
+    url,
+    queryType,
+    thumbnail,
+    priority = false
+  ) {
     console.log(`${interaction.user.username} requested ${title}`);
     const exampleEmbed = new EmbedBuilder()
       .setColor("#0099ff")
       .setTitle("🎶 Music 🎶")
-      .setDescription("Adding " + "[" + title + "]" + "(" + url + ")")
+      .setDescription(
+        `Adding ${priority ? "up next " : " "}` +
+          `[${title}](${url})`
+      )
       .setURL(url)
       .setAuthor({
         name: interaction.user.username,
@@ -134,7 +167,7 @@ module.exports = {
         text: "🕊️ Long Live Jumbo 🕊️",
         iconURL: "https://i.imgur.com/qJMLlxG.jpeg",
       });
-    await interaction.reply({ embeds: [exampleEmbed] });
+    interaction.channel.send({ embeds: [exampleEmbed] });
 
     const songObject = {
       url: url,
@@ -171,22 +204,23 @@ module.exports = {
       //if the queue exists then we add it to queue
 
       addSong = results.songs;
-      addSong.push(songObject);
+      priority ? addSong.splice(1, 0, songObject) : addSong.push(songObject);
       console.log(`Updating queue for ${interaction.guild.name}`);
       await mongo.updateQueueByGuildId(interaction.guildId, { songs: addSong });
     }
   },
   async playMusic(interaction, skip = false) {
     try {
-      const exampleEmbed = new EmbedBuilder().setColor("#0099ff").setAuthor({
-        name: interaction.user.username,
-        iconURL: interaction.user.displayAvatarURL(),
-      })
-      .setFooter({
-        text: "🕊️ Long Live Jumbo 🕊️",
-        iconURL: "https://i.imgur.com/qJMLlxG.jpeg",
-      });
-      var delay = 5;
+      const exampleEmbed = new EmbedBuilder()
+        .setColor("#0099ff")
+        .setAuthor({
+          name: interaction.user.username,
+          iconURL: interaction.user.displayAvatarURL(),
+        })
+        .setFooter({
+          text: "🕊️ Long Live Jumbo 🕊️",
+          iconURL: "https://i.imgur.com/qJMLlxG.jpeg",
+        });
 
       const results = await mongo.findQueueByGuildId(interaction.guildId);
       //delete the queue if the size is 0
@@ -218,15 +252,14 @@ module.exports = {
 
         await entersState(connection, VoiceConnectionStatus.Ready, 5_000);
         connection.on("stateChange", (old_state, new_state) => {
-            if (
-              old_state.status === VoiceConnectionStatus.Ready &&
-              new_state.status === VoiceConnectionStatus.Connecting
-            ) {
-              connection.configureNetworking();
-            }
-          });
+          if (
+            old_state.status === VoiceConnectionStatus.Ready &&
+            new_state.status === VoiceConnectionStatus.Connecting
+          ) {
+            connection.configureNetworking();
+          }
+        });
       }
-
 
       connection.on("error", (err) => {
         console.log(err);
@@ -238,21 +271,21 @@ module.exports = {
       title = playingSong.title;
       url = playingSong.url;
       thumbnail = playingSong.thumbnail;
-      console.log("Playing " + "[" + title + "]" + "(" + url + ")");
-      exampleEmbed.setDescription(
-        "Playing " + "[" + title + "]" + "(" + url + ")"
-      );
-      exampleEmbed.setTitle("🎶 Music 🎶" )
+      console.log(`Playing [${title}](${url})`);
+      exampleEmbed.setDescription(`Playing [${title}](${url})`);
+      exampleEmbed.setTitle("🎶 Music 🎶");
       exampleEmbed.setURL(url);
       exampleEmbed.setImage(thumbnail);
 
       const player = createAudioPlayer();
+
       // const resource = createAudioResource(ytdl(url, { filter: 'audioonly'}));
       // const resource = createAudioResource(ytdl(url, {filter: "audioonly", opusEncoded: true, encoderArgs: ['-af', 'bass=g=10']}));
-      let stream = await play.stream(url)
+
+      let stream = await play.stream(url);
       const resource = createAudioResource(stream.stream, {
-        inputType: stream.type
-    })
+        inputType: stream.type,
+      });
 
       interaction.channel.send({ embeds: [exampleEmbed] });
 
@@ -280,6 +313,7 @@ module.exports = {
       });
     } catch (err) {
       console.log("Play.js error catcher: ");
+      console.log(err);
       const nextresults = await mongo.findQueueByGuildId(interaction.guildId);
       if (nextresults) {
         console.log(`Deleting queue for ${interaction.guild.name}`);
@@ -287,20 +321,5 @@ module.exports = {
       }
       connection.disconnect();
     }
-  },
-  async getQueryType(searchQuery) {
-    //if its not a link
-    if (searchQuery.indexOf("http") < 0) {
-      return null;
-    }
-    // guaranteed link
-    const urlType = urlParser.parse(searchQuery);
-
-    // if cannot parse the link it must be a direct link
-    if (urlType === undefined || typeof urlType === "undefined") {
-      return "direct";
-    }
-    // else the link was parsed and was a valid search result
-    return urlType.provider;
   },
 };
