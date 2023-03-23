@@ -130,7 +130,7 @@ module.exports = {
         iconURL: interaction.user.displayAvatarURL(),
       })
       .setFooter({
-        text: "🕊️ Long Live Jumbo 2020-2023 🕊️",
+        text: "🕊️ Long Live Jumbo 🕊️",
         iconURL: "https://i.imgur.com/qJMLlxG.jpeg",
       });
     await interaction.reply({ embeds: [exampleEmbed] });

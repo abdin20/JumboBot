@@ -19,7 +19,7 @@ module.exports = {
       .setTitle("🔫 --COMP/VAL-- 🔫")
       .setDescription(msg)
       .setFooter({
-        text: "🕊️ Long Live Jumbo 2020-2023 🕊️",
+        text: "🕊️ Long Live Jumbo 🕊️",
         iconURL: "https://i.imgur.com/qJMLlxG.jpeg",
       });
 
