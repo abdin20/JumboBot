@@ -123,6 +123,7 @@ module.exports = {
     console.log(`${interaction.user.username} requested ${title}`);
     const exampleEmbed = new EmbedBuilder()
       .setColor("#0099ff")
+      .setTitle("🎶 Music 🎶")
       .setDescription("Adding " + "[" + title + "]" + "(" + url + ")")
       .setURL(url)
       .setAuthor({
