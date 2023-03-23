@@ -172,7 +172,6 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
 	newplayer.on(AudioPlayerStatus.Idle, (async () => {
 		const results = await mongo.findQueueByGuildId(newState.guild.id);
 		if (!results) checkConnection.disconnect();
-
 	}));
 	// newplayer.on(AudioPlayerStatus.AutoPaused, (async () => {
 	// 	console.log("autopaused")

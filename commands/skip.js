@@ -11,7 +11,7 @@ module.exports = {
     async execute(interaction) {
         const exampleEmbed = new EmbedBuilder()
             .setColor('#ff0000')
-            .setTitle("Error")
+            .setTitle("🎶 Music 🎶" )
             .setColor('#0099ff')
             .setAuthor({ name: interaction.user.username, iconURL: interaction.user.displayAvatarURL() })
         if (!interaction.member.voice.channelId) {
