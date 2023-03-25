@@ -4,14 +4,15 @@ var mongo = require("../mongodb.js");
 const searchYoutube = require("youtube-api-v3-search");
 const urlParser = require("js-video-url-parser");
 const play = require("./play.js");
+
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("next")
-    .setDescription("Adds a song up next in the queue")
-    .addStringOption((option) =>
+    .setName("seek")
+    .setDescription("seeks to the desired time (in seconds) ")
+    .addIntegerOption((option) =>
       option
-        .setName("search")
-        .setDescription("Search term for music")
+        .setName("seconds")
+        .setDescription("how many seconds into the video to seek")
         .setRequired(true)
     ),
   // main function
@@ -33,14 +34,22 @@ module.exports = {
       interaction.reply({ embeds: [exampleEmbed], ephemeral: true });
       return;
     }
+    results = await mongo.findQueueByGuildId(interaction.guildId);
+    if (!results) {
+      exampleEmbed.setDescription("Queue doesnt exist");
+      interaction.reply({ embeds: [exampleEmbed], ephemeral: true });
+      return;
+    }
+    
+    const seek = interaction.options.getInteger("seconds");
 
-    const searchQuery = interaction.options.getString("search");
-    const { title, url, query, thumbnail,seek } = await play.parseSearchQuery(
-      searchQuery
-    );
-    console.log(`Added up next ${title}`);
+    if (seek<0) {
+      exampleEmbed.setDescription("Please enter number larger than 0");
+      interaction.reply({ embeds: [exampleEmbed], ephemeral: true });
+      return;
+    }
+
     interaction.reply({ content: 'Success!', ephemeral: true });
-    interaction.deleteReply()
-    play.processQueue(interaction, title, url, query, thumbnail,{priority:true,seek:seek});
+    play.playMusic(interaction,seek);
   },
 };

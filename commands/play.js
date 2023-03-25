@@ -40,13 +40,13 @@ module.exports = {
     }
     // get search from user
     const searchQuery = interaction.options.getString("search");
-    const { title, url, query, thumbnail } = await this.parseSearchQuery(
+    const { title, url, query, thumbnail,seek } = await this.parseSearchQuery(
       searchQuery
     );
     interaction.reply({ content: "Success!", ephemeral: true });
     interaction.deleteReply();
     // process this info into queue
-    await this.processQueue(interaction, title, url, query, thumbnail);
+    await this.processQueue(interaction, title, url, query, thumbnail,{priority:false,seek});
   },
   // can take videoId or search params
   async getQueryType(searchQuery) {
@@ -56,7 +56,6 @@ module.exports = {
     }
     // guaranteed link
     const urlType = urlParser.parse(searchQuery);
-    console.log(urlType)
     // if cannot parse the link it must be a direct link
     if (urlType === undefined || typeof urlType === "undefined") {
       return "direct";
@@ -72,6 +71,7 @@ module.exports = {
     let query = "";
     let youtubeResult;
     let thumbnail = "";
+    let seek=0;
     // types of query are youtube link, direct link, or search
     switch (queryType) {
       case "youtube":
@@ -82,6 +82,7 @@ module.exports = {
         title = youtubeResult.title;
         thumbnail = youtubeResult.thumbnail;
         query = "youtube";
+        seek= urlParser.parse(searchQuery)?.params?.start ?? 0
         break;
 
       // direct link
@@ -104,7 +105,7 @@ module.exports = {
       // title = searchResult.items[0].snippet.title
       // query = "youtube"
     }
-    return { url, title, thumbnail, query };
+    return { url, title, thumbnail, query,seek };
   },
   async getYoutubeInfo(videoId) {
     const searchResult = await this.getYouTubeSearchResults(
@@ -148,14 +149,14 @@ module.exports = {
     url,
     queryType,
     thumbnail,
-    priority = false
+    songParams={priority:false,seek:0}
   ) {
     console.log(`${interaction.user.username} requested ${title}`);
     const exampleEmbed = new EmbedBuilder()
       .setColor("#0099ff")
       .setTitle("🎶 Music 🎶")
       .setDescription(
-        `Adding ${priority ? "up next " : " "}` +
+        `Adding ${songParams?.priority ? "up next " : " "}` +
           `[${title}](${url})`
       )
       .setURL(url)
@@ -174,6 +175,7 @@ module.exports = {
       title: title,
       queryType: queryType,
       thumbnail: thumbnail,
+      seek:songParams.seek,
     };
     results = await mongo.findQueueByGuildId(interaction.guildId);
     if (!results) {
@@ -204,12 +206,12 @@ module.exports = {
       //if the queue exists then we add it to queue
 
       addSong = results.songs;
-      priority ? addSong.splice(1, 0, songObject) : addSong.push(songObject);
+      songParams?.priority ? addSong.splice(1, 0, songObject) : addSong.push(songObject);
       console.log(`Updating queue for ${interaction.guild.name}`);
       await mongo.updateQueueByGuildId(interaction.guildId, { songs: addSong });
     }
   },
-  async playMusic(interaction, skip = false) {
+  async playMusic(interaction, seek=null) {
     try {
       const exampleEmbed = new EmbedBuilder()
         .setColor("#0099ff")
@@ -271,34 +273,43 @@ module.exports = {
       title = playingSong.title;
       url = playingSong.url;
       thumbnail = playingSong.thumbnail;
+      
       console.log(`Playing [${title}](${url})`);
       exampleEmbed.setDescription(`Playing [${title}](${url})`);
       exampleEmbed.setTitle("🎶 Music 🎶");
       exampleEmbed.setURL(url);
       exampleEmbed.setImage(thumbnail);
 
+      //check for seek from override first then uses queue seek
+      if(seek===null){
+        seek=playingSong.seek
+        interaction.channel.send({ embeds: [exampleEmbed] });
+      }
+
       const player = createAudioPlayer();
 
       // const resource = createAudioResource(ytdl(url, { filter: 'audioonly'}));
       // const resource = createAudioResource(ytdl(url, {filter: "audioonly", opusEncoded: true, encoderArgs: ['-af', 'bass=g=10']}));
 
-      let stream = await play.stream(url);
+      let stream = await play.stream(url,{seek});
       const resource = createAudioResource(stream.stream, {
         inputType: stream.type,
       });
 
-      interaction.channel.send({ embeds: [exampleEmbed] });
-
+      
+ 
       player.play(resource);
       connection.subscribe(player);
 
       player.on(AudioPlayerStatus.Idle, async () => {
         const results = await mongo.findQueueByGuildId(interaction.guildId);
         if (!results?.songs) return;
-        songs = results.songs;
-        songs.shift();
-        console.log(`Updating queue for ${interaction.guild.name}`);
-        await mongo.updateQueueByGuildId(interaction.guildId, { songs: songs });
+        if(!results.loop){
+          songs = results.songs;
+          songs.shift();
+          console.log(`Updating queue for ${interaction.guild.name}`);
+          await mongo.updateQueueByGuildId(interaction.guildId, { songs: songs });
+        }
         this.playMusic(interaction);
       });
       player.on("error", async (error) => {

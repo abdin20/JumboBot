@@ -47,7 +47,7 @@ module.exports = {
       //update to db and play music
       console.log(`Updating queue for ${interaction.guild.name}`);
       await mongo.updateQueueByGuildId(interaction.guildId, { songs: songs });
-      play.playMusic(interaction, true);
+      play.playMusic(interaction);
     }
   },
 };

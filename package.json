@@ -21,7 +21,8 @@
     "play-dl": "^1.9.6",
     "youtube-api-v3-search": "^1.2.1",
     "youtube-id": "^1.0.0",
-    "ytdl-core": "^4.11.2"
+    "ytdl-core": "^4.11.2",
+    "ytfps": "^1.1.0"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

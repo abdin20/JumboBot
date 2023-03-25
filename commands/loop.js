@@ -1,19 +1,11 @@
 const { SlashCommandBuilder } = require("discord.js");
 const { EmbedBuilder } = require("discord.js");
 var mongo = require("../mongodb.js");
-const searchYoutube = require("youtube-api-v3-search");
-const urlParser = require("js-video-url-parser");
-const play = require("./play.js");
+
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("next")
-    .setDescription("Adds a song up next in the queue")
-    .addStringOption((option) =>
-      option
-        .setName("search")
-        .setDescription("Search term for music")
-        .setRequired(true)
-    ),
+    .setName("loop")
+    .setDescription("toggle looping of songs playing"),
   // main function
   async execute(interaction) {
     const exampleEmbed = new EmbedBuilder()
@@ -33,14 +25,15 @@ module.exports = {
       interaction.reply({ embeds: [exampleEmbed], ephemeral: true });
       return;
     }
-
-    const searchQuery = interaction.options.getString("search");
-    const { title, url, query, thumbnail,seek } = await play.parseSearchQuery(
-      searchQuery
-    );
-    console.log(`Added up next ${title}`);
-    interaction.reply({ content: 'Success!', ephemeral: true });
-    interaction.deleteReply()
-    play.processQueue(interaction, title, url, query, thumbnail,{priority:true,seek:seek});
+    results = await mongo.findQueueByGuildId(interaction.guildId);
+    if (!results) {
+      exampleEmbed.setDescription("Queue doesnt exist");
+      interaction.reply({ embeds: [exampleEmbed], ephemeral: true });
+      return;
+    }
+    let loop =!results.loop
+    await mongo.updateQueueByGuildId(interaction.guildId, { loop });
+    exampleEmbed.setDescription(`Loop is ${loop ? "on" :"off"}`);
+    interaction.reply({ embeds: [exampleEmbed]});
   },
 };
