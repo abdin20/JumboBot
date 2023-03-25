@@ -70,7 +70,7 @@ module.exports = {
     let url = "";
     let query = "";
     let youtubeResult;
-    let thumbnail = "";
+    let thumbnail = "https://i.imgur.com/inFYoNd.jpeg";
     let seek=0;
     // types of query are youtube link, direct link, or search
     switch (queryType) {
@@ -90,7 +90,6 @@ module.exports = {
         title = searchQuery;
         url = searchQuery;
         query = "direct";
-        return;
         break;
 
       // defaults to searching youtube
@@ -273,7 +272,7 @@ module.exports = {
       title = playingSong.title;
       url = playingSong.url;
       thumbnail = playingSong.thumbnail;
-      
+      queryType= playingSong.queryType
       console.log(`Playing [${title}](${url})`);
       exampleEmbed.setDescription(`Playing [${title}](${url})`);
       exampleEmbed.setTitle("🎶 Music 🎶");
@@ -290,11 +289,17 @@ module.exports = {
 
       // const resource = createAudioResource(ytdl(url, { filter: 'audioonly'}));
       // const resource = createAudioResource(ytdl(url, {filter: "audioonly", opusEncoded: true, encoderArgs: ['-af', 'bass=g=10']}));
-
-      let stream = await play.stream(url,{seek});
-      const resource = createAudioResource(stream.stream, {
-        inputType: stream.type,
-      });
+      urlParser.parse(url)
+      let stream;
+      let resource;
+      if(queryType==="youtube"){
+         stream = await play.stream(url,{seek});
+         resource = createAudioResource(stream.stream, {
+          inputType: stream.type,
+        });
+      }else if(queryType==="direct"){
+       resource = createAudioResource(url);
+      }
 
       
  
@@ -320,7 +325,8 @@ module.exports = {
           console.log(`Deleting queue for ${interaction.guild.name}`);
           await mongo.deleteQueueByObject(nextresults);
         }
-        connection.disconnect();
+        let connection = getVoiceConnection(interaction.guildId);
+        connection?.disconnect();
       });
     } catch (err) {
       console.log("Play.js error catcher: ");
@@ -330,7 +336,8 @@ module.exports = {
         console.log(`Deleting queue for ${interaction.guild.name}`);
         await mongo.deleteQueueByObject(nextresults);
       }
-      connection.disconnect();
+      let connection = getVoiceConnection(interaction.guildId);
+      connection?.disconnect();
     }
   },
 };
