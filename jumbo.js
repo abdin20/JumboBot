@@ -60,7 +60,20 @@ for (const file of commandFiles) {
 
 client.once("ready", async () => {
   await mongo.deleteAllQueues();
+
+  client.user.setPresence({
+    status: 'online', // You can set the status to online, idle, dnd or invisible
+    activities: [
+      {
+        name: 'With your feelings', // This can be any string
+        type: 'PLAYING' // You can set the type to WATCHING, LISTENING or PLAYING
+      }
+    ]
+  });
+
   console.log("Ready!");
+
+
 });
 
 client.on("interactionCreate", async (interaction) => {

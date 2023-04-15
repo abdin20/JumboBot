@@ -12,7 +12,7 @@ const {
 const { EmbedBuilder } = require("discord.js");
 
 const play = require("play-dl");
-var youtubeID = require("youtube-id");
+const youtube = require("youtube-metadata-from-url");
 const searchYoutube = require("youtube-api-v3-search");
 const urlParser = require("js-video-url-parser");
 var mongo = require("../mongodb.js");
@@ -40,13 +40,16 @@ module.exports = {
     }
     // get search from user
     const searchQuery = interaction.options.getString("search");
-    const { title, url, query, thumbnail,seek } = await this.parseSearchQuery(
+    const { title, url, query, thumbnail, seek } = await this.parseSearchQuery(
       searchQuery
     );
     interaction.reply({ content: "Success!", ephemeral: true });
     interaction.deleteReply();
     // process this info into queue
-    await this.processQueue(interaction, title, url, query, thumbnail,{priority:false,seek});
+    await this.processQueue(interaction, title, url, query, thumbnail, {
+      priority: false,
+      seek,
+    });
   },
   // can take videoId or search params
   async getQueryType(searchQuery) {
@@ -71,18 +74,17 @@ module.exports = {
     let query = "";
     let youtubeResult;
     let thumbnail = "https://i.imgur.com/inFYoNd.jpeg";
-    let seek=0;
+    let seek = 0;
     // types of query are youtube link, direct link, or search
     switch (queryType) {
       case "youtube":
-        youtubeResult = await this.getYoutubeInfo(
-          urlParser.parse(searchQuery).id
-        );
-        url = youtubeResult.url;
-        title = youtubeResult.title;
-        thumbnail = youtubeResult.thumbnail;
+        url =
+          "https://www.youtube.com/watch?v=" + urlParser.parse(searchQuery).id;
+        result = await youtube.metadata(url);
+        title = result.title;
+        thumbnail = result.thumbnail_url;
         query = "youtube";
-        seek= urlParser.parse(searchQuery)?.params?.start ?? 0
+        seek = urlParser.parse(searchQuery)?.params?.start ?? 0;
         break;
 
       // direct link
@@ -104,12 +106,10 @@ module.exports = {
       // title = searchResult.items[0].snippet.title
       // query = "youtube"
     }
-    return { url, title, thumbnail, query,seek };
+    return { url, title, thumbnail, query, seek };
   },
-  async getYoutubeInfo(videoId) {
-    const searchResult = await this.getYouTubeSearchResults(
-      videoId.substring(0, 1) === "-" ? videoId.substring(1) : videoId
-    );
+  async getYoutubeInfo(search) {
+    const searchResult = await this.getYouTubeSearchResults(search);
     url = "https://www.youtube.com/watch?v=" + searchResult.items[0].id.videoId;
     title = searchResult.items[0].snippet.title;
     query = "youtube";
@@ -148,7 +148,7 @@ module.exports = {
     url,
     queryType,
     thumbnail,
-    songParams={priority:false,seek:0}
+    songParams = { priority: false, seek: 0 }
   ) {
     console.log(`${interaction.user.username} requested ${title}`);
     const exampleEmbed = new EmbedBuilder()
@@ -174,7 +174,7 @@ module.exports = {
       title: title,
       queryType: queryType,
       thumbnail: thumbnail,
-      seek:songParams.seek,
+      seek: songParams.seek,
     };
     results = await mongo.findQueueByGuildId(interaction.guildId);
     if (!results) {
@@ -205,12 +205,14 @@ module.exports = {
       //if the queue exists then we add it to queue
 
       addSong = results.songs;
-      songParams?.priority ? addSong.splice(1, 0, songObject) : addSong.push(songObject);
+      songParams?.priority
+        ? addSong.splice(1, 0, songObject)
+        : addSong.push(songObject);
       console.log(`Updating queue for ${interaction.guild.name}`);
       await mongo.updateQueueByGuildId(interaction.guildId, { songs: addSong });
     }
   },
-  async playMusic(interaction, seek=null) {
+  async playMusic(interaction, seek = null) {
     try {
       const exampleEmbed = new EmbedBuilder()
         .setColor("#0099ff")
@@ -272,7 +274,7 @@ module.exports = {
       title = playingSong.title;
       url = playingSong.url;
       thumbnail = playingSong.thumbnail;
-      queryType= playingSong.queryType
+      queryType = playingSong.queryType;
       console.log(`Playing [${title}](${url})`);
       exampleEmbed.setDescription(`Playing [${title}](${url})`);
       exampleEmbed.setTitle("🎶 Music 🎶");
@@ -280,8 +282,8 @@ module.exports = {
       exampleEmbed.setImage(thumbnail);
 
       //check for seek from override first then uses queue seek
-      if(seek===null){
-        seek=playingSong.seek
+      if (seek === null) {
+        seek = playingSong.seek;
         interaction.channel.send({ embeds: [exampleEmbed] });
       }
 
@@ -289,31 +291,31 @@ module.exports = {
 
       // const resource = createAudioResource(ytdl(url, { filter: 'audioonly'}));
       // const resource = createAudioResource(ytdl(url, {filter: "audioonly", opusEncoded: true, encoderArgs: ['-af', 'bass=g=10']}));
-      urlParser.parse(url)
+      urlParser.parse(url);
       let stream;
       let resource;
-      if(queryType==="youtube"){
-         stream = await play.stream(url,{seek});
-         resource = createAudioResource(stream.stream, {
+      if (queryType === "youtube") {
+        stream = await play.stream(url, { seek });
+        resource = createAudioResource(stream.stream, {
           inputType: stream.type,
         });
-      }else if(queryType==="direct"){
-       resource = createAudioResource(url);
+      } else if (queryType === "direct") {
+        resource = createAudioResource(url);
       }
 
-      
- 
       player.play(resource);
       connection.subscribe(player);
 
       player.on(AudioPlayerStatus.Idle, async () => {
         const results = await mongo.findQueueByGuildId(interaction.guildId);
         if (!results?.songs) return;
-        if(!results.loop){
+        if (!results.loop) {
           songs = results.songs;
           songs.shift();
           console.log(`Updating queue for ${interaction.guild.name}`);
-          await mongo.updateQueueByGuildId(interaction.guildId, { songs: songs });
+          await mongo.updateQueueByGuildId(interaction.guildId, {
+            songs: songs,
+          });
         }
         this.playMusic(interaction);
       });
