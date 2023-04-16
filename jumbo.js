@@ -62,18 +62,16 @@ client.once("ready", async () => {
   await mongo.deleteAllQueues();
 
   client.user.setPresence({
-    status: 'online', // You can set the status to online, idle, dnd or invisible
+    status: "online", // You can set the status to online, idle, dnd or invisible
     activities: [
       {
-        name: 'With your feelings', // This can be any string
-        type: 'PLAYING' // You can set the type to WATCHING, LISTENING or PLAYING
-      }
-    ]
+        name: "With your feelings", // This can be any string
+        type: "PLAYING", // You can set the type to WATCHING, LISTENING or PLAYING
+      },
+    ],
   });
 
   console.log("Ready!");
-
-
 });
 
 client.on("interactionCreate", async (interaction) => {
@@ -98,24 +96,48 @@ const getRandomSoundEffect = (playerId, userName) => {
   // if shane
   console.log(`Playing effect for ${userName}`);
   const playerRand = Math.floor(Math.random() * 101);
-  if (playerRand <= 48) {
+  if (playerRand <= 45) {
     console.log("playing custom user song");
     // shane
     if (playerId === "545042126644445184") {
-      return "https://lobfile.com/file/0qDy.mp3";
+      let playerSongs = ["https://lobfile.com/file/0qDy.mp3"];
+      const playerSongRand = Math.floor(Math.random() * playerSongs.length);
+      return playerSongs[playerSongRand];
     }
     //connor
     if (playerId === "144260548245061632") {
-      return "https://lobfile.com/file/WxhT.mp3";
+      let playerSongs = [
+        "https://lobfile.com/file/eSQe.mp3",
+        "https://lobfile.com/file/WxhT.mp3",
+      ];
+      const playerSongRand = Math.floor(Math.random() * playerSongs.length);
+      return playerSongs[playerSongRand];
     } //aaron
     if (playerId === "146425358927790081") {
-      return "https://lobfile.com/file/RWM9.mp3";
+      let playerSongs = [
+        "https://lobfile.com/file/RWM9.mp3",
+        "https://lobfile.com/file/DnEe.mp3",
+      ];
+      const playerSongRand = Math.floor(Math.random() * playerSongs.length);
+      return playerSongs[playerSongRand];
     } //shane chen
     if (playerId === "116672531661979652") {
-      return "https://lobfile.com/file/IYrZ.mp3";
+      let playerSongs = [
+        "https://lobfile.com/file/IYrZ.mp3",
+        " https://lobfile.com/file/id9H.wav",
+        "https://lobfile.com/file/1AkZ.mp3",
+      ];
+      const playerSongRand = Math.floor(Math.random() * playerSongs.length);
+      return playerSongs[playerSongRand];
     } //carrie
     if (playerId === "313780633518473218") {
-      return "https://lobfile.com/file/1SDy.mp3";
+      let playerSongs = [
+        "https://lobfile.com/file/1SDy.mp3",
+        "https://lobfile.com/file/dWiB.mp3",
+      ];
+      const playerSongRand = Math.floor(Math.random() * playerSongs.length);
+      return playerSongs[playerSongRand];
+      //
     } //noah
     if (playerId === "331589423546368001") {
       return "https://lobfile.com/file/eSQe.mp3";
@@ -143,8 +165,9 @@ const getRandomSoundEffect = (playerId, userName) => {
     if (playerId === "163368896844267521") {
       // let playerSongs = ['https://lobfile.com/file/xeOe.wav','https://lobfile.com/file/imx8.mp3']
       let playerSongs = [
-        "https://lobfile.com/file/xeOe.wav",
-        "https://lobfile.com/file/e7Dq.wav",
+        "https://lobfile.com/file/xeOe.wav", //in your area
+        "https://lobfile.com/file/IaKx.mp3", //halal boy
+        "https://lobfile.com/file/OReR.mp3", //ooh ahh
       ];
       const playerSongRand = Math.floor(Math.random() * playerSongs.length);
       return playerSongs[playerSongRand];
@@ -160,7 +183,28 @@ const getRandomSoundEffect = (playerId, userName) => {
     }
     // hady
     if (playerId === "310442661343526915") {
-      let playerSongs = ["https://lobfile.com/file/XSs3.wav"];
+      let playerSongs = [
+        "https://lobfile.com/file/9VGE.mp3",
+        "https://lobfile.com/file/vw53.mp3",
+      ];
+      const playerSongRand = Math.floor(Math.random() * playerSongs.length);
+      return playerSongs[playerSongRand];
+    }
+    //john h
+    if ((playerId = "165898703410954241")) {
+      let playerSongs = ["https://lobfile.com/file/083y.mp3"];
+      const playerSongRand = Math.floor(Math.random() * playerSongs.length);
+      return playerSongs[playerSongRand];
+    }
+    //mfong
+    if ((playerId = "202248175703162880")) {
+      let playerSongs = ["https://lobfile.com/file/9uIF.mp3"];
+      const playerSongRand = Math.floor(Math.random() * playerSongs.length);
+      return playerSongs[playerSongRand];
+    }
+    //felix
+    if ((playerId = "294638368996982784")) {
+      let playerSongs = ["https://lobfile.com/file/1mnx.mp3"];
       const playerSongRand = Math.floor(Math.random() * playerSongs.length);
       return playerSongs[playerSongRand];
     }

@@ -18,12 +18,14 @@ module.exports = {
       carrie: "313780633518473218",
       connor: "144260548245061632",
       nic: "181589300754907137",
+      felix:'294638368996982784'
     };
-    
+
     // Fetch all the user objects using Promise.all()
     const userObjects = await Promise.all(
       Object.values(usersObjects).map(async (userId) => {
         try {
+          if(userId===interaction.user.id) return null
           const user = await interaction.client.users.fetch(userId);
           return user;
         } catch (error) {
@@ -34,9 +36,15 @@ module.exports = {
       })
     );
 
+    // Filter out users who are not in the guild
+    const guildMembers = await interaction.guild.members.fetch();
+    const guildUserIds = guildMembers.map((member) => member.user.id);
+    const guildUserObjects = userObjects.filter((user) =>
+      guildUserIds.includes(user.id)
+    );
+
     // Create the mention string
-    const mentionString = userObjects
-      .filter((user) => user !== null)
+    const mentionString = guildUserObjects
       .map((user) => user.toString())
       .join(" ");
 
@@ -48,26 +56,37 @@ module.exports = {
         iconURL: interaction.user.displayAvatarURL(),
       })
       .setTitle("🔫 --COMP/VAL-- 🔫")
-      .setDescription(`${mentionString}, wanna comp/val?`);
+      .setDescription(`${mentionString}, wanna comp/val?`)
+      .setTimestamp();
 
     // Reply in the channel
     await interaction.reply({ embeds: [exampleEmbed] });
-    const guildsFilter=[`"rock" ZONE`]
+
+    const guildsFilter = [`"rock" ZONE`];
     // Send a direct message to each user
-    for (const user of userObjects) {
-      if (user !== null) {
-        let message=``;
-        let guildName=interaction.guild.name
-        if(guildsFilter.includes(guildName)){
-          message=`Hey ${user.username}, we're playing comp/val!`
-        }else{
-          message=`Hey ${user.username}, we're playing comp/val! \nJoin the ${guildName} Discord!`
-        }
-        try {
-          await user.send(message);
-        } catch (error) {
-          console.log(`Failed to send message to ${user.username}`);
-        }
+    for (const user of guildUserObjects) {
+      let message = `Hey ${user.username}, ${interaction.user.username} is inviting you to play comp/val!`;
+      const dmEmbed = new EmbedBuilder();
+      let guildName = interaction.guild.name;
+      if (!guildsFilter.includes(guildName)) {
+        message = `Hey ${user.username}, ${interaction.user.username} is inviting you to play comp/val! \nJoin the ${guildName} Discord!`;
+      }
+
+      dmEmbed
+        .setColor("#25cf0e")
+        .setAuthor({
+          name: interaction.user.username,
+          iconURL: interaction.user.displayAvatarURL(),
+        })
+        .setTitle("🔫 --COMP/VAL-- 🔫")
+        .setDescription(message)
+        .setFooter({
+          text: "If you want to be removed from this DM service please message Abdin",
+        });
+      try {
+        await user.send({ embeds: [dmEmbed] });
+      } catch (error) {
+        console.log(`Failed to send message to ${user.username}`);
       }
     }
   },
