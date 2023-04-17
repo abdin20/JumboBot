@@ -6,7 +6,7 @@ const {
   Partials,
   Collection,
   CommandInteractionOptionResolver,
-   EmbedBuilder,
+  EmbedBuilder,
 } = require("discord.js");
 const {
   joinVoiceChannel,
@@ -31,7 +31,7 @@ const client = new Client({
     "GuildMessageReactions",
     GatewayIntentBits.DirectMessages,
     GatewayIntentBits.MessageContent
-    
+
   ],
   partials: [
     Partials.Channel,
@@ -83,7 +83,7 @@ client.once("ready", async () => {
 });
 
 client.on('messageCreate', async (message) => {
-  if(!message.guild && message.content) {
+  if (!message.guild && message.content) {
     const dmEmbed = new EmbedBuilder()
       .setColor('#0099ff')
       .setTitle(`New DM from ${message.author.tag}`)
@@ -101,9 +101,11 @@ client.on("interactionCreate", async (interaction) => {
 
   if (!command) return;
 
-  console.log(
-    `User: ${interaction.user.username} executed ${interaction.commandName}`
-  );
+  if (!interaction.commandName === "confess") {
+    console.log(
+      `User: ${interaction.user.username} executed ${interaction.commandName}`
+    );
+  }
   try {
     await command.execute(interaction);
   } catch (error) {
