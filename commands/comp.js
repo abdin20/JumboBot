@@ -19,7 +19,8 @@ module.exports = {
       connor: "144260548245061632",
       nic: "181589300754907137",
       felix:'294638368996982784',
-      'shane chen': '116672531661979652'
+      'shane chen': '116672531661979652',
+      'john huang': '165898703410954241'
     };
 
     // Fetch all the user objects using Promise.all()
