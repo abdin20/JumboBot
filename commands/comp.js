@@ -35,12 +35,12 @@ module.exports = {
         }
       })
     );
-
+      console.log(userObjects[0].id)
     // Filter out users who are not in the guild
     const guildMembers = await interaction.guild.members.fetch();
     const guildUserIds = guildMembers.map((member) => member.user.id);
     const guildUserObjects = userObjects.filter((user) =>
-      guildUserIds.includes(user.id)
+      guildUserIds.includes(user?.id)
     );
 
     // Create the mention string
