@@ -211,19 +211,19 @@ const getRandomSoundEffect = (playerId, userName) => {
       return playerSongs[playerSongRand];
     }
     //john h
-    if ((playerId = "165898703410954241")) {
+    if ((playerId === "165898703410954241")) {
       let playerSongs = ["https://lobfile.com/file/083y.mp3"];
       const playerSongRand = Math.floor(Math.random() * playerSongs.length);
       return playerSongs[playerSongRand];
     }
     //mfong
-    if ((playerId = "202248175703162880")) {
+    if ((playerId === "202248175703162880")) {
       let playerSongs = ["https://lobfile.com/file/9uIF.mp3"];
       const playerSongRand = Math.floor(Math.random() * playerSongs.length);
       return playerSongs[playerSongRand];
     }
     //felix
-    if ((playerId = "294638368996982784")) {
+    if ((playerId === "294638368996982784")) {
       let playerSongs = ["https://lobfile.com/file/1mnx.mp3"];
       const playerSongRand = Math.floor(Math.random() * playerSongs.length);
       return playerSongs[playerSongRand];
