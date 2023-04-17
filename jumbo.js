@@ -1,11 +1,12 @@
 const path = require("path");
 require("dotenv").config({ path: path.resolve(__dirname, "./.env") });
-
 const {
   Client,
   GatewayIntentBits,
+  Partials,
   Collection,
   CommandInteractionOptionResolver,
+   EmbedBuilder,
 } = require("discord.js");
 const {
   joinVoiceChannel,
@@ -28,7 +29,14 @@ const client = new Client({
     "GuildPresences",
     "GuildMessageReactions",
     "GuildMessageReactions",
+    GatewayIntentBits.DirectMessages,
+    GatewayIntentBits.MessageContent
+    
   ],
+  partials: [
+    Partials.Channel,
+    Partials.Message
+  ]
 });
 
 const soundImports = require("./sounds.js");
@@ -72,6 +80,18 @@ client.once("ready", async () => {
   });
 
   console.log("Ready!");
+});
+
+client.on('messageCreate', async (message) => {
+  if(!message.guild && message.content) {
+    const dmEmbed = new EmbedBuilder()
+      .setColor('#0099ff')
+      .setTitle(`New DM from ${message.author.tag}`)
+      .setDescription(`${message.content.toString()}`)
+      .setTimestamp();
+    const dmChannel = await client.channels.cache.get('894070373082103840');
+    dmChannel.send({ embeds: [dmEmbed] });
+  }
 });
 
 client.on("interactionCreate", async (interaction) => {
