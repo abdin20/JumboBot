@@ -20,6 +20,8 @@ const {
 } = require("@discordjs/voice");
 const fs = require("fs");
 const { createReadStream } = require("fs");
+const axios = require('axios');
+const ffmpeg = require('ffmpeg-static');
 const client = new Client({
   intents: [
     "Guilds",
@@ -30,7 +32,8 @@ const client = new Client({
     "GuildMessageReactions",
     "GuildMessageReactions",
     GatewayIntentBits.DirectMessages,
-    GatewayIntentBits.MessageContent
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildVoiceStates
 
   ],
   partials: [
@@ -38,7 +41,7 @@ const client = new Client({
     Partials.Message
   ]
 });
-
+const { generateDependencyReport } = require('@discordjs/voice');
 const soundImports = require("./sounds.js");
 const clipNames = soundImports.clipNames;
 const clips = soundImports.clips;
@@ -293,10 +296,24 @@ client.on("voiceStateUpdate", async (oldState, newState) => {
   // 	adapterCreator: newState.guild.voiceAdapterCreator,
   // });
   let newplayer = createAudioPlayer();
-  let resource = createAudioResource(
-    getRandomSoundEffect(newState.member.id, newState.member.user.username)
-  );
+
+  const response = await axios({
+    method: 'get',
+    url: getRandomSoundEffect(newState.member.id, newState.member.user.username),
+    responseType: 'stream'
+  });
+
+  // Use ffmpeg to process the stream
+  let resource = createAudioResource(response.data, {
+    inputType: StreamType.Arbitrary,
+    inlineVolume: true,
+    ffmpegExecutable: ffmpeg
+  });
+
+  newplayer.play(resource);
+  checkConnection.subscribe(newplayer);
   newplayer.on(AudioPlayerStatus.Idle, async () => {
+    console.log("leaving")
     const results = await mongo.findQueueByGuildId(newState.guild.id);
     if (!results) checkConnection.disconnect();
   });
@@ -307,8 +324,7 @@ client.on("voiceStateUpdate", async (oldState, newState) => {
 
   // }));
 
-  newplayer.play(resource);
-  checkConnection.subscribe(newplayer);
+
 });
 
 client.login(token);

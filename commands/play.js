@@ -10,6 +10,9 @@ const {
   entersState,
 } = require("@discordjs/voice");
 const { EmbedBuilder } = require("discord.js");
+const axios = require('axios');
+const ffmpeg = require('ffmpeg-static');
+const { createReadStream } = require('node:fs');
 
 const play = require("play-dl");
 const youtube = require("youtube-metadata-from-url");
@@ -156,7 +159,7 @@ module.exports = {
       .setTitle("🎶 Music 🎶")
       .setDescription(
         `Adding ${songParams?.priority ? "up next " : " "}` +
-          `[${title}](${url})`
+        `[${title}](${url})`
       )
       .setURL(url)
       .setAuthor({
@@ -300,7 +303,19 @@ module.exports = {
           inputType: stream.type,
         });
       } else if (queryType === "direct") {
-        resource = createAudioResource(url);
+        // Create a stream using ffmpeg for direct file links
+        const response = await axios({
+          method: 'get',
+          url: url,
+          responseType: 'stream'
+        });
+      
+        // Use ffmpeg to process the stream
+        resource = createAudioResource(response.data, {
+          inputType: StreamType.Arbitrary,
+          inlineVolume: true,
+          ffmpegExecutable: ffmpeg
+        });
       }
 
       player.play(resource);

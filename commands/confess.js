@@ -1,6 +1,6 @@
 const fs = require("fs");
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-
+const path = "./confession-data.json";
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("confess")
@@ -20,8 +20,8 @@ module.exports = {
 
         // Load confession channels and confessions from JSON file
         let confessionData = { channels: {}, confessions: [] };
-        if (await fs.existsSync("../confession-data.json")) {
-            confessionData = await require("../confession-data.json");
+        if (await fs.existsSync(path)) {
+            confessionData = await JSON.parse(fs.readFileSync(path, 'utf8'));
         }
 
         let channelId;
@@ -40,10 +40,15 @@ module.exports = {
             channelId = channelOption.id;
 
             // Write confession channels to JSON file
-            await fs.writeFileSync(
-                "./confession-data.json",
-                JSON.stringify(confessionData)
-            );
+            try {
+                fs.writeFileSync(path, JSON.stringify(confessionData, null, 4));
+            } catch (err) {
+                console.error('Error saving confession:', err);
+                return await interaction.reply({
+                    content: "There was an error saving the confession.",
+                    ephemeral: true,
+                });
+            }
         }
 
         // If no confession channel has been set, prompt user to set one
@@ -64,13 +69,14 @@ module.exports = {
 
         // Write confessions to JSON file
         try {
-            await fs.writeFileSync(
-                "./confession-data.json",
-                JSON.stringify(confessionData)
-            );
-            fs.chmodSync("../confession-data.json", "777");
+            fs.writeFileSync(path, JSON.stringify(confessionData, null, 4));
+            fs.chmodSync("./confession-data.json", "777");
         } catch (err) {
-            console.log('error saving confession')
+            console.error('Error saving confession:', err);
+            return await interaction.reply({
+                content: "There was an error saving the confession.",
+                ephemeral: true,
+            });
         }
 
         const date = new Date();
