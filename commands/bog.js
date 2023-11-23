@@ -85,7 +85,16 @@ module.exports = {
             // End the bog break
             const endTime = Date.now();
             const breakDuration = endTime - bogState.timestamp;
-            const durationText = `${Math.floor(breakDuration / 60000)} minutes and ${Math.floor((breakDuration % 60000) / 1000)} seconds`;
+            const hours = Math.floor(breakDuration / 3600000);
+            const minutes = Math.floor((breakDuration % 3600000) / 60000);
+            const seconds = Math.floor((breakDuration % 60000) / 1000);
+            
+            let durationParts = [];
+            if (hours > 0) durationParts.push(`${hours} hours`);
+            if (minutes > 0) durationParts.push(`${minutes} minutes`);
+            if (seconds > 0) durationParts.push(`${seconds} seconds`);
+            
+            const durationText = durationParts.join(' and ');
             embed.setDescription(`Bog break has ended by Lagdad. Duration: ${durationText}.`);
             await interaction.editReply({ embeds: [embed] });
 
