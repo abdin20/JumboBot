@@ -10,6 +10,7 @@ module.exports = {
         .setDescription('Toggle bog break status'),
 
     async execute(interaction) {
+        
         const specificUserIds = ['310442661343526915,','1019709027439087707'];
 
         const bogEmbed = new EmbedBuilder()
@@ -17,7 +18,7 @@ module.exports = {
             .setAuthor({ name: interaction.user.username, iconURL: interaction.user.displayAvatarURL() })
             .setFooter({ text: '🕊️ Long Live Jumbo 🕊️', iconURL: 'https://i.imgur.com/qJMLlxG.jpeg' });
 
-        if (specificUserIds.includes(interaction.user.id )) {
+        if (specificUserIds.includes(`${interaction.user.id}` )) {
             if (isOnBreak) {
                 if (!timerExpired) {
                     // User manually ends break
