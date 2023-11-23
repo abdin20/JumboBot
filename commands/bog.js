@@ -1,5 +1,7 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+
 let isOnBreak = false;
+let timerExpired = false;
 let breakTimer;
 
 module.exports = {
@@ -8,33 +10,40 @@ module.exports = {
         .setDescription('Toggle bog break status'),
 
     async execute(interaction) {
-        // Define the specific user's ID
-        const specificUserId = '310442661343526915';
+        const specificUserIds = ['310442661343526915,','1019709027439087707'];
 
         const bogEmbed = new EmbedBuilder()
             .setColor(isOnBreak ? '#00ff00' : '#ff0000')
             .setAuthor({ name: interaction.user.username, iconURL: interaction.user.displayAvatarURL() })
             .setFooter({ text: '🕊️ Long Live Jumbo 🕊️', iconURL: 'https://i.imgur.com/qJMLlxG.jpeg' });
 
-        // Check if the user is the specific user
-        if (interaction.user.id === specificUserId) {
+        if (specificUserIds.includes(interaction.user.id )) {
             if (isOnBreak) {
-                // User returns from break
-                clearTimeout(breakTimer);
-                bogEmbed.setDescription('🚭 Lagdad is back from the bog break.');
+                if (!timerExpired) {
+                    // User manually ends break
+                    clearTimeout(breakTimer);
+                    bogEmbed.setDescription('🚭 Lagdad is back from the bog break.');
+                } else {
+                    // Timer expired and user acknowledges the end of the break
+                    bogEmbed.setDescription('🚭 Lagdad has returned from the bog break.');
+                }
+                // Reset states
                 isOnBreak = false;
+                timerExpired = false;
             } else {
                 // User goes on break
                 bogEmbed.setDescription('🚬 Lagdad is now on a bog break. 🚬');
                 isOnBreak = true;
+                timerExpired = false;
 
                 // Start a 5-minute timer
                 breakTimer = setTimeout(async () => {
+                    timerExpired = true; // Set timerExpired to true when the timer completes
                     try {
-                        const user = await interaction.client.users.fetch(specificUserId);
-                        user.send('⏰ Your bog break is over, time to wrap up!');
-                        bogEmbed.setDescription('⏲️ Lagdad is running late from the bog break.');
-                        await interaction.editReply({ embeds: [bogEmbed] });
+                        const user = await interaction.client.users.fetch(specificUserIds[0]);
+                        const user1 = await interaction.client.users.fetch(specificUserIds[1]);
+                        await user.send('⏰ Your bog break is over, time to wrap up!');
+                        await user1.send('⏰ Your bog break is over, time to wrap up!');
                     } catch (error) {
                         console.error('Error sending DM: ', error);
                     }
