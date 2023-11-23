@@ -1,64 +1,108 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const fs = require('fs');
+const path = require('path');
 
-let isOnBreak = false;
-let timerExpired = false;
-let breakTimer;
+const specificUserIds = ['1019709027439087707', '310442661343526915'];
+const stateFilePath = path.join(__dirname, '../bogState.json');
+const historyFilePath = path.join(__dirname, '../bogHistory.json');
 
+function formatDate(date) {
+    return new Date(date).toLocaleString('en-US', {
+        timeZone: 'America/New_York',
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true
+    }) + ' EST';
+}
+
+// Load or initialize state
+let bogState = { onBreak: false, timestamp: null };
+if (fs.existsSync(stateFilePath)) {
+    bogState = JSON.parse(fs.readFileSync(stateFilePath));
+} else {
+    fs.writeFileSync(stateFilePath, JSON.stringify(bogState));
+}
+
+// Load or initialize bog history
+let bogHistory = [];
+if (fs.existsSync(historyFilePath)) {
+    bogHistory = JSON.parse(fs.readFileSync(historyFilePath));
+} else {
+    fs.writeFileSync(historyFilePath, JSON.stringify(bogHistory));
+}
+
+const bogTime = 1000*60*5; // 5 minutes
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('bog')
-        .setDescription('Toggle bog break status'),
-
+        .setName("bog")
+        .setDescription("Manage a shared bog break for specific users"),
     async execute(interaction) {
-
-        const specificUserIds = ['310442661343526915', '1019709027439087707'];
-
-        const bogEmbed = new EmbedBuilder()
-            .setColor(isOnBreak ? '#00ff00' : '#ff0000')
+        await interaction.deferReply();
+        const embed = new EmbedBuilder()
             .setAuthor({ name: interaction.user.username, iconURL: interaction.user.displayAvatarURL() })
             .setFooter({ text: '🕊️ Long Live Jumbo 🕊️', iconURL: 'https://i.imgur.com/qJMLlxG.jpeg' });
 
-        if (specificUserIds.includes(`${interaction.user.id}`)) {
-            if (isOnBreak) {
-                if (!timerExpired) {
-                    // User manually ends break
-                    clearTimeout(breakTimer);
-                    bogEmbed.setDescription('🚭 Lagdad is back from the bog break.');
-                } else {
-                    // Timer expired and user acknowledges the end of the break
-                    bogEmbed.setDescription('🚭 Lagdad has returned from the bog break.');
-                }
-                // Reset states
-                isOnBreak = false;
-                timerExpired = false;
-            } else {
-                // User goes on break
-                bogEmbed.setDescription('🚬 Lagdad is now on a bog break. 🚬');
-                isOnBreak = true;
-                timerExpired = false;
-
-                // Start a 5-minute timer
-                breakTimer = setTimeout(async () => {
-                    timerExpired = true; // Set timerExpired to true when the timer completes
-                    try {
-                        const user = await interaction.client.users.fetch(specificUserIds[0]);
-                        const user1 = await interaction.client.users.fetch(specificUserIds[1]);
-                        await user.send('⏰ Your bog break is over, time to wrap up!');
-                        await user1.send('⏰ Your bog break is over, time to wrap up!');
-                        bogEmbed.setDescription('Lagdad is running late from his bog break 🕒 ')
-                        await interaction.channel.send({ embeds: [bogEmbed] });
-                    } catch (error) {
-                        console.error('Error sending DM: ', error);
-                    }
-                }, 300000); // 5 minutes in milliseconds
-            }
-        } else {
-            // If it's not the specific user
-            bogEmbed.setDescription(isOnBreak
-                ? '🚬 Lagdad is currently on a bog break.'
-                : '🚭 Lagdad is not on a bog break.');
+        // Non-specific users can check the status
+        if (!specificUserIds.includes(interaction.user.id)) {
+            const status = bogState.onBreak ? 'currently on a bog break. 🚬' : 'not currently on a bog break. 🚭';
+            embed.setDescription(`Lagdad is ${status}`);
+            embed.setColor(bogState.onBreak ? '#00ff00' : '#ff0000');
+            await interaction.editReply({ embeds: [embed] });
+            return;
         }
 
-        await interaction.reply({ embeds: [bogEmbed] });
+        // Specific users can start/end the bog break
+        if (!bogState.onBreak) {
+            // Start the bog break
+            bogState.onBreak = true;
+            bogState.timestamp = Date.now();
+            embed.setDescription(`Bog break has started by Lagdad.`);
+            await interaction.editReply({ embeds: [embed] });
+
+            // Set a timer for the reminder
+            setTimeout(async () => {
+                if (bogState.onBreak) {
+                    embed.setDescription('⏰ The bog break is running late. ⏰');
+                    // Send a DM to each user in the specificUserIds array
+                    for (const userId of specificUserIds) {
+                        try {
+                            embed.setDescription('⏰ Your bog break is over, time to wrap it up! ⏰');
+                            const user = await interaction.client.users.fetch(userId);
+                            await user.send({ embeds: [embed] });
+                        } catch (error) {
+                            console.error(`Could not send DM to user ${userId}: ${error}`);
+                        }
+                    }
+                    embed.setDescription('⏰ The bog break is running late. ⏰');
+                    await interaction.editReply({ embeds: [embed] });
+                }
+            }, bogTime);
+        } else {
+            // End the bog break
+            const endTime = Date.now();
+            const breakDuration = endTime - bogState.timestamp;
+            const durationText = `${Math.floor(breakDuration / 60000)} minutes and ${Math.floor((breakDuration % 60000) / 1000)} seconds`;
+            embed.setDescription(`Bog break has ended by Lagdad. Duration: ${durationText}.`);
+            await interaction.editReply({ embeds: [embed] });
+
+            const formattedStart = formatDate(bogState.timestamp);
+            const formattedEnd = formatDate(endTime);
+
+            // Log the bog break in history
+            bogHistory.push({
+                start: formattedStart,
+                end: formattedEnd,
+                duration: breakDuration
+            });
+            fs.writeFileSync(historyFilePath, JSON.stringify(bogHistory));
+
+            bogState.onBreak = false;
+        }
+
+        fs.writeFileSync(stateFilePath, JSON.stringify(bogState));
     },
 };
