@@ -11,7 +11,7 @@ module.exports = {
 
     async execute(interaction) {
         
-        const specificUserIds = ['310442661343526915,','1019709027439087707'];
+        const specificUserIds = ['310442661343526915','1019709027439087707'];
 
         const bogEmbed = new EmbedBuilder()
             .setColor(isOnBreak ? '#00ff00' : '#ff0000')
