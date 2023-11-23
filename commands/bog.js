@@ -10,15 +10,15 @@ module.exports = {
         .setDescription('Toggle bog break status'),
 
     async execute(interaction) {
-        
-        const specificUserIds = ['310442661343526915','1019709027439087707'];
+
+        const specificUserIds = ['310442661343526915', '1019709027439087707'];
 
         const bogEmbed = new EmbedBuilder()
             .setColor(isOnBreak ? '#00ff00' : '#ff0000')
             .setAuthor({ name: interaction.user.username, iconURL: interaction.user.displayAvatarURL() })
             .setFooter({ text: '🕊️ Long Live Jumbo 🕊️', iconURL: 'https://i.imgur.com/qJMLlxG.jpeg' });
 
-        if (specificUserIds.includes(`${interaction.user.id}` )) {
+        if (specificUserIds.includes(`${interaction.user.id}`)) {
             if (isOnBreak) {
                 if (!timerExpired) {
                     // User manually ends break
@@ -45,6 +45,8 @@ module.exports = {
                         const user1 = await interaction.client.users.fetch(specificUserIds[1]);
                         await user.send('⏰ Your bog break is over, time to wrap up!');
                         await user1.send('⏰ Your bog break is over, time to wrap up!');
+                        bogEmbed.setDescription('Lagdad is running late from his bog break 🕒 ')
+                        await interaction.channel.send({ embeds: [bogEmbed] });
                     } catch (error) {
                         console.error('Error sending DM: ', error);
                     }
