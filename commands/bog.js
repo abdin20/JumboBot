@@ -35,7 +35,7 @@ if (fs.existsSync(historyFilePath)) {
     fs.writeFileSync(historyFilePath, JSON.stringify(bogHistory));
 }
 
-const bogTime = 1000*60*5; // 5 minutes
+const bogTime = 1000 * 60 * 5; // 5 minutes
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("bog")
@@ -43,7 +43,7 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply();
         const embed = new EmbedBuilder()
-            .setAuthor({ name: interaction.user.username, iconURL: interaction.user.displayAvatarURL() })
+            .setAuthor({ name: interaction.member.displayName, iconURL: interaction.user.displayAvatarURL() })
             .setFooter({ text: '🕊️ Long Live Jumbo 🕊️', iconURL: 'https://i.imgur.com/qJMLlxG.jpeg' });
 
         // Non-specific users can check the status
@@ -88,15 +88,47 @@ module.exports = {
             const hours = Math.floor(breakDuration / 3600000);
             const minutes = Math.floor((breakDuration % 3600000) / 60000);
             const seconds = Math.floor((breakDuration % 60000) / 1000);
-            
+
             let durationParts = [];
             if (hours > 0) durationParts.push(`${hours} hours`);
             if (minutes > 0) durationParts.push(`${minutes} minutes`);
             if (seconds > 0) durationParts.push(`${seconds} seconds`);
-            
+
             const durationText = durationParts.join(' and ');
-            embed.setDescription(`Bog break has ended by Lagdad. Duration: ${durationText}.`);
+
+
+            var bogTotal = 0;
+            var bogOccurences = 0;
+            bogHistory.forEach((x) => {
+                if ( x.duration>=10000 && x.duration <= 3600000) {
+                    bogTotal += x.duration
+                    bogOccurences += 1;
+                }
+            })
+            let bogAverage = Math.round(bogTotal / bogOccurences)
+
+            const averageHours = Math.floor(bogAverage / 3600000);
+            const averageMinutes = Math.floor((bogAverage % 3600000) / 60000);
+            const averageSeconds = Math.floor((bogAverage % 60000) / 1000);
+
+            let bogAverageDurationParts = [];
+            if (averageHours > 0) bogAverageDurationParts.push(`${averageHours} hours`);
+            if (averageMinutes > 0) bogAverageDurationParts.push(`${averageMinutes} minutes`);
+            if (averageSeconds > 0) bogAverageDurationParts.push(`${averageSeconds} seconds`);
+
+            const bogAverageDurationPartsText = bogAverageDurationParts.join(' and ');
+            embed.setDescription(`Bog break has ended by Lagdad. ${breakDuration <= bogAverage ? `Very fast! WOW!` : `slower than average womp womp`}`);
+            embed.addFields(
+                { name: 'Duration', value: `${durationText}`, inline: true },
+                { name: 'Average', value: `${bogAverageDurationPartsText}`, inline: true },
+            )
+            if (breakDuration <= bogAverage) {
+                embed.setImage('https://lobfile.com/file/JEXSlpYw.png')
+            } else {
+                embed.setImage('https://lobfile.com/file/QLxzkeUh.png')
+            }
             await interaction.editReply({ embeds: [embed] });
+
 
             const formattedStart = formatDate(bogState.timestamp);
             const formattedEnd = formatDate(endTime);
@@ -107,6 +139,8 @@ module.exports = {
                 end: formattedEnd,
                 duration: breakDuration
             });
+
+
             fs.writeFileSync(historyFilePath, JSON.stringify(bogHistory));
 
             bogState.onBreak = false;
