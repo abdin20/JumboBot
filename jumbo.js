@@ -123,6 +123,19 @@ const getRandomSoundEffect = (playerId, userName) => {
   const playerRand = Math.floor(Math.random() * 101);
   if (playerRand <= 45) {
     console.log("playing custom user song");
+    // nic
+    if (playerId === "181589300754907137") {
+      let playerSongs = ["https://lobfile.com/file/JFQMW62C.mp3"];
+      const playerSongRand = Math.floor(Math.random() * playerSongs.length);
+      return playerSongs[playerSongRand];
+    }
+    // jav
+    if (playerId === "166703160876990464") {
+      let playerSongs = ["https://lobfile.com/file/DoObMy9g.mp3"];
+      const playerSongRand = Math.floor(Math.random() * playerSongs.length);
+      return playerSongs[playerSongRand];
+    }
+    // 
     // shane
     if (playerId === "545042126644445184") {
       let playerSongs = ["https://lobfile.com/file/0qDy.mp3"];

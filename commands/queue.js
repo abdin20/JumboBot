@@ -35,7 +35,7 @@ module.exports = {
     exampleEmbed.setThumbnail(firstSong.thumbnail);
     if (songs.length > 1) {
       for (const [index, song] of songs.slice(1,Math.min(6,songs.length)).entries()) {
-        msg+=`${index+2}. [${song.title}](${song.url}) \n \n`
+        msg+=`${index+1}. [${song.title}](${song.url}) \n \n`
       }
     }
     exampleEmbed.setDescription(msg)

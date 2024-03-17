@@ -317,11 +317,11 @@ module.exports = {
           ffmpegExecutable: ffmpeg
         });
       }
-
+      player.removeAllListeners();
       player.play(resource);
       connection.subscribe(player);
 
-      player.on(AudioPlayerStatus.Idle, async () => {
+      player.once(AudioPlayerStatus.Idle, async () => {
         const results = await mongo.findQueueByGuildId(interaction.guildId);
         if (!results?.songs) return;
         if (!results.loop) {
