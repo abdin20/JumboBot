@@ -45,6 +45,7 @@ const { generateDependencyReport } = require('@discordjs/voice');
 const soundImports = require("./sounds.js");
 const clipNames = soundImports.clipNames;
 const clips = soundImports.clips;
+const actualClips=soundImports.clipsDict
 
 var mongo = require("./mongodb.js");
 
@@ -224,7 +225,8 @@ const getRandomSoundEffect = (playerId, userName) => {
       let playerSongs = [
         "https://lobfile.com/file/7Ek9PKrb.mp3",
         "https://lobfile.com/file/ixfJCEDv.mp3",
-        "https://lobfile.com/file/cNeewrcK.m4a"
+        "https://lobfile.com/file/cNeewrcK.m4a",
+        "https://lobfile.com/file/9QalgWL9.mp3"
       ];
       const playerSongRand = Math.floor(Math.random() * playerSongs.length);
       return playerSongs[playerSongRand];
@@ -251,9 +253,9 @@ const getRandomSoundEffect = (playerId, userName) => {
 
   // return 'https://lobfile.com/file/wKG2.ogg'
 
-  const rand = Math.floor(Math.random() * clips.length);
-  console.log(`Effect: ${clipNames[rand]}`);
-  return clips[rand];
+  const rand = Math.floor(Math.random() * actualClips.length);
+  console.log(`Effect: ${actualClips[rand].effect}`);
+  return actualClips[rand].link;
 };
 
 client.on("voiceStateUpdate", async (oldState, newState) => {
