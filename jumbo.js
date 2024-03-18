@@ -121,7 +121,7 @@ const getRandomSoundEffect = (playerId, userName) => {
   // if shane
   console.log(`Playing effect for ${userName}`);
   const playerRand = Math.floor(Math.random() * 101);
-  if (playerRand <= 45) {
+  if (playerRand <= 50) {
     console.log("playing custom user song");
     // nic
     if (playerId === "181589300754907137") {
@@ -222,8 +222,9 @@ const getRandomSoundEffect = (playerId, userName) => {
     // hady
     if (playerId === "310442661343526915") {
       let playerSongs = [
-        "https://lobfile.com/file/9VGE.mp3",
-        "https://lobfile.com/file/vw53.mp3",
+        "https://lobfile.com/file/7Ek9PKrb.mp3",
+        "https://lobfile.com/file/ixfJCEDv.mp3",
+        "https://lobfile.com/file/cNeewrcK.m4a"
       ];
       const playerSongRand = Math.floor(Math.random() * playerSongs.length);
       return playerSongs[playerSongRand];
