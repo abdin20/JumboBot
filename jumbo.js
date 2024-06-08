@@ -145,9 +145,9 @@ const getRandomSoundEffect = (playerId, userName) => {
     //connor
     if (playerId === "144260548245061632") {
       let playerSongs = [
-        // "https://lobfile.com/file/eSQe.mp3",
-        // "https://lobfile.com/file/WxhT.mp3",
-        'https://lobfile.com/file/xyK2GJCD.mp3'
+        "https://lobfile.com/file/eSQe.mp3",
+        "https://lobfile.com/file/WxhT.mp3",
+        // 'https://lobfile.com/file/xyK2GJCD.mp3'
       ];
       const playerSongRand = Math.floor(Math.random() * playerSongs.length);
       return playerSongs[playerSongRand];
@@ -171,6 +171,7 @@ const getRandomSoundEffect = (playerId, userName) => {
     } //carrie
     if (playerId === "313780633518473218") {
       let playerSongs = [
+        "https://lobfile.com/file/XxEz8aNg.mp3",
         "https://lobfile.com/file/1SDy.mp3",
         "https://lobfile.com/file/dWiB.mp3",
       ];

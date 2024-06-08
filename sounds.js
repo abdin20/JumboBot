@@ -29,8 +29,7 @@ exports.clipsDict = [
     { "effect": "terraria", "link": "https://lobfile.com/file/w2eI.mp3" },
     { "effect": "my heart i loved her", "link": "https://lobfile.com/file/U5sf.mp3" },
     { "effect": "wowa wee wa its very nice", "link": "https://lobfile.com/file/SdIo.mp3" },
-    { "effect": "you will never get this lalala", "link": "https://lobfile.com/file/w4ou.mp3" },
-    { "effect": "walt please hear me out", "link": "https://lobfile.com/file/llM7.mp3" }]
+    { "effect": "you will never get this lalala", "link": "https://lobfile.com/file/w4ou.mp3" }]
 
 
 exports.clipNames = [
