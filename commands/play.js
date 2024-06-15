@@ -15,8 +15,10 @@ const ffmpeg = require('ffmpeg-static');
 const { createReadStream } = require('node:fs');
 
 const play = require("play-dl");
+
 const ytdl = require("@distube/ytdl-core");
 const { PassThrough } = require('stream');
+const { spawn } = require('child_process');
 const youtube = require("youtube-metadata-from-url");
 const searchYoutube = require("youtube-api-v3-search");
 const urlParser = require("js-video-url-parser");
@@ -304,13 +306,45 @@ module.exports = {
         // resource = createAudioResource(stream.stream, {
         //   inputType: StreamType.Arbitrary
         // });
-        const seekTime = seek ? new Date(seek * 1000).toISOString().substr(11, 8) : '00:00:00'; // Convert seconds to hh:mm:ss format
-        stream = ytdl(url, { filter: 'audioonly', highWaterMark: 1 << 25, begin: seekTime});
-        const passthrough = new PassThrough();
-        stream.pipe(passthrough);
-        resource = createAudioResource(passthrough, {
-          inputType: StreamType.Arbitrary, // Set the appropriate stream type
-        });
+
+
+        // stream = ytdl(url, { filter: 'audioonly', highWaterMark: 1 << 25});
+        // const passthrough = new PassThrough();
+        // stream.pipe(passthrough);
+        // resource = createAudioResource(passthrough, {
+        //   inputType: StreamType.Arbitrary, // Set the appropriate stream type
+        // });
+
+        stream = ytdl(url, { filter: 'audioonly', highWaterMark: 1 << 25 });
+  
+        if (seek) {
+          const ffmpeg = spawn('ffmpeg', [
+            '-ss', seek.toString(),   // Seek to the specified time in seconds
+            '-i', 'pipe:0',           // Input from stdin
+            '-f', 'opus',             // Output format
+            '-vn',                    // No video
+            'pipe:1'                  // Output to stdout
+          ]);
+          
+          stream.pipe(ffmpeg.stdin);
+          
+          const passthrough = new PassThrough();
+          ffmpeg.stdout.pipe(passthrough);
+          
+          resource = createAudioResource(passthrough, {
+            inputType: StreamType.OggOpus, // Adjust stream type as needed
+          });
+        } else {
+          const passthrough = new PassThrough();
+          stream.pipe(passthrough);
+          
+          resource = createAudioResource(passthrough, {
+            inputType: StreamType.Arbitrary, // Adjust stream type as needed
+          });
+        }
+
+
+
       } else if (queryType === "direct") {
         // Create a stream using ffmpeg for direct file links
         const response = await axios({
