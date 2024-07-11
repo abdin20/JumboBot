@@ -207,7 +207,9 @@ const getRandomSoundEffect = (playerId, userName) => {
       let playerSongs = [
         "https://lobfile.com/file/xeOe.wav", //in your area
         "https://lobfile.com/file/IaKx.mp3", //halal boy
-        "https://lobfile.com/file/OReR.mp3", //ooh ahh
+        'https://lobfile.com/file/QJLbFAnB.mp3',//spongebob scheme
+        'https://lobfile.com/file/HHdKr4sD.mp3',//i like money
+
       ];
       const playerSongRand = Math.floor(Math.random() * playerSongs.length);
       return playerSongs[playerSongRand];
