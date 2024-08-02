@@ -332,7 +332,7 @@ module.exports = {
           ffmpeg.stdout.pipe(passthrough);
           
           resource = createAudioResource(passthrough, {
-            inputType: StreamType.OggOpus, // Adjust stream type as needed
+            inputType: StreamType.Arbitrary, // Adjust stream type as needed
           });
         } else {
           const passthrough = new PassThrough();
