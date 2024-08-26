@@ -171,7 +171,7 @@ const getRandomSoundEffect = (playerId, userName) => {
     } //carrie
     if (playerId === "313780633518473218") {
       let playerSongs = [
-        "https://lobfile.com/file/XxEz8aNg.mp3",
+        // "https://lobfile.com/file/XxEz8aNg.mp3", carrie saying carrie
         "https://lobfile.com/file/1SDy.mp3",
         "https://lobfile.com/file/dWiB.mp3",
       ];
