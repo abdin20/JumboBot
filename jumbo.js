@@ -130,6 +130,12 @@ const getRandomSoundEffect = (playerId, userName) => {
       const playerSongRand = Math.floor(Math.random() * playerSongs.length);
       return playerSongs[playerSongRand];
     }
+    //jared
+    if (playerId === "152559250806145025") {
+      let playerSongs = ["https://lobfile.com/file/z2zBFFuZ.mp3"];
+      const playerSongRand = Math.floor(Math.random() * playerSongs.length);
+      return playerSongs[playerSongRand];
+    }
     // jav
     if (playerId === "166703160876990464") {
       let playerSongs = ["https://lobfile.com/file/DoObMy9g.mp3"];
