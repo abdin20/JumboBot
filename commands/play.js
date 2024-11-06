@@ -50,6 +50,10 @@ module.exports = {
     const { title, url, query, thumbnail, seek } = await this.parseSearchQuery(
       searchQuery
     );
+    if (!url) {
+      interaction.reply({ content: "No results found", ephemeral: true });
+      return;
+    }
     interaction.reply({ content: "Success!", ephemeral: true });
     interaction.deleteReply();
     // process this info into queue
@@ -104,9 +108,9 @@ module.exports = {
       // defaults to searching youtube
       default:
         youtubeResult = await this.getYoutubeInfo(searchQuery);
-        url = youtubeResult.url;
-        title = youtubeResult.title;
-        thumbnail = youtubeResult.thumbnail;
+        url = youtubeResult?.url;
+        title = youtubeResult?.title;
+        thumbnail = youtubeResult?.thumbnail;
         query = "youtube";
       // const searchResult = await this.getYouTubeSearchResults(searchQuery)
       // url = "https://www.youtube.com/watch?v=" + searchResult.items[0].id.videoId
@@ -117,6 +121,9 @@ module.exports = {
   },
   async getYoutubeInfo(search) {
     const searchResult = await this.getYouTubeSearchResults(search);
+    if (!searchResult || !searchResult?.items || searchResult?.items?.length === 0) {
+      return null;
+    }
     url = "https://www.youtube.com/watch?v=" + searchResult.items[0].id.videoId;
     title = searchResult.items[0].snippet.title;
     query = "youtube";
@@ -142,9 +149,9 @@ module.exports = {
     }
 
     //check to see if there are results
-    if (typeof r.items[0] === "undefined") {
+    if ( !r || typeof r?.items?.[0] === "undefined" || r?.items?.length === 0) {
       console.log("No results error");
-      return;
+      return null;
     }
 
     return r;
