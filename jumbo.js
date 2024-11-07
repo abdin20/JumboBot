@@ -362,17 +362,15 @@ client.on("voiceStateUpdate", async (oldState, newState) => {
 client.on(Events.MessageCreate, async (message) => {
   if (message.author.bot) return;
 
-  // Check if this is a word score channel
   const scoreChannel = await mongo.getWordScoreChannel(message.guildId);
   if (message.channelId !== scoreChannel) return;
 
-  // Updated Wordle pattern to match both numeric scores and X
-  const wordlePattern = /Wordle (\d+,\d+|\d+) (X|\d)\/\d\n\n[🟩⬛🟨\n]+/;
+  // Updated Wordle pattern to handle the asterisk
+  const wordlePattern = /Wordle (\d+,\d+|\d+) (X|\d)\/\d\*?\n\n[🟩⬛🟨\n]+/;
   const wordleMatch = message.content.match(wordlePattern);
 
   if (wordleMatch) {
     const puzzleNumber = parseInt(wordleMatch[1].replace(',', ''));
-    // If X, set score to 7 (worse than maximum 6 attempts)
     const score = wordleMatch[2] === 'X' ? 7 : parseInt(wordleMatch[2]);
     
     const recorded = await mongo.updateWordScore(
@@ -383,10 +381,10 @@ client.on(Events.MessageCreate, async (message) => {
     );
     
     if (recorded) {
-        if (score === 7) await message.react('❌');  // Failed attempt
+        if (score === 7) await message.react('💀');
         else if (score <= 2) await message.react('🏆');
         else if (score <= 4) await message.react('👏');
-        else await message.react('💀');
+        else await message.react('🎯');
     } else {
         await message.react('🔄');
     }
@@ -395,24 +393,41 @@ client.on(Events.MessageCreate, async (message) => {
   // Check for Connections score
   const connectionsPattern = /Connections\s*\nPuzzle #(\d+)\s*\n((?:[🟦🟨🟩🟪]{4}\s*\n*)+)/;
   const connectionsMatch = message.content.match(connectionsPattern);
+  
   if (connectionsMatch) {
     const puzzleNumber = parseInt(connectionsMatch[1]);
-    const attempts = connectionsMatch[2].split('\n').length;
+    const rows = connectionsMatch[2].split('\n').filter(row => row.trim());
+    
+    // Check if solution is complete by looking for rows of same color
+    const hasAllGreen = rows.some(row => row === '🟩🟩🟩🟩');
+    const hasAllYellow = rows.some(row => row === '🟨🟨🟨🟨');
+    const hasAllBlue = rows.some(row => row === '🟦🟦🟦🟦');
+    const hasAllPurple = rows.some(row => row === '🟪🟪🟪🟪');
+    
+    const isComplete = hasAllGreen && hasAllYellow && hasAllBlue && hasAllPurple;
+    
+    // Base score is number of attempts, add 8 if incomplete
+    const attempts = rows.length;
+    const score = isComplete ? attempts : attempts + 8;
     
     const recorded = await mongo.updateWordScore(
       message.author.id,
       "connections",
-      attempts,
+      score,
       puzzleNumber
     );
     
     if (recorded) {
-      // React based on attempts
-      if (attempts <= 4) await message.react('🏆');
-      else if (attempts <= 6) await message.react('👏');
-      else await message.react('🎯');
+      if (!isComplete) {
+        await message.react('💀'); // Failed/incomplete attempt
+      } else if (attempts <= 4) {
+        await message.react('🏆');
+      } else if (attempts <= 6) {
+        await message.react('👏');
+      } else {
+        await message.react('🎯');
+      }
     } else {
-      // Already recorded this puzzle
       await message.react('🔄');
     }
   }

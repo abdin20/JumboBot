@@ -202,3 +202,64 @@ exports.deletePlaylistByObject = async function deletePlaylistByObject(propertyO
     console.log(`Deleting playlist for: ${propertyObject.id}`)
 
 }
+
+
+// wordscore stuff
+// Set word score tracking channel
+exports.setWordScoreChannel = async function(guildId, channelId) {
+    await mongodClient.db("userData").collection("wordScoreChannels")
+      .updateOne(
+        { guildId: guildId },
+        { $set: { channelId: channelId } },
+        { upsert: true }
+      );
+  }
+  
+  // Get word score channel
+  exports.getWordScoreChannel = async function(guildId) {
+    const result = await mongodClient.db("userData").collection("wordScoreChannels")
+      .findOne({ guildId: guildId });
+    return result?.channelId;
+  }
+  
+  // Update word game score - now without guildId
+  exports.updateWordScore = async function(userId, game, score, puzzleNumber) {
+    // First check if this puzzle has already been recorded
+    const existing = await mongodClient.db("userData").collection("wordScores")
+      .findOne({
+        userId: userId,
+        game: game,
+        completedPuzzles: puzzleNumber
+      });
+  
+    if (existing) {
+      return false; // Already recorded this puzzle
+    }
+  
+    // Update or create the score document
+    await mongodClient.db("userData").collection("wordScores")
+      .updateOne(
+        { 
+          userId: userId,
+          game: game
+        },
+        {
+          $inc: {
+            totalScore: score,
+            gamesPlayed: 1
+          },
+          $push: {
+            completedPuzzles: puzzleNumber
+          }
+        },
+        { upsert: true }
+      );
+      
+    return true; // Successfully recorded
+  }
+  // Get word scores for a game (globally)
+  exports.getWordScores = async function(game) {
+    return await mongodClient.db("userData").collection("wordScores")
+      .find({ game: game })
+      .toArray();
+  }
