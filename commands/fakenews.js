@@ -19,22 +19,22 @@ module.exports = {
 
     // News template arrays
     const headlinesWithEvent = [
-        "🚨 BREAKING: {user} Caught {event}",
-        "😱 SHOCKING: {user} Spotted {event}",
-        "👀 WITNESS REPORT: {user} Seen {event}",
-        "📸 CAUGHT ON CAMERA: {user} {event}",
-        "🔍 EXCLUSIVE: {user} Discovered {event}",
-        "⚠️ ALERT: {user} Found {event}",
-        "💥 SCANDAL: {user} Exposed for {event}",
-        "🤯 UNBELIEVABLE: {user} Documented {event}",
-        "🚔 CAUGHT RED-HANDED: {user} {event}",
-        "🎥 LEAKED FOOTAGE: {user} Filmed {event}",
-        "🕵️ CONSPIRACY CONFIRMED: {user} Actually {event}",
-        "🎬 HIDDEN CAMERA REVEALS: {user} {event}",
-        "🤫 ANONYMOUS SOURCE CONFIRMS: {user} {event}",
-        "📹 SECURITY FOOTAGE SHOWS: {user} {event}",
-        "📡 LIVE ON SCENE: {user} Currently {event}",
-        "🔎 UNDERCOVER INVESTIGATION: {user} {event}"
+        "BREAKING: {user} Caught {event}",
+        "SHOCKING: {user} Spotted {event}",
+        "WITNESS REPORT: {user} Seen {event}",
+        "CAUGHT ON CAMERA: {user} {event}",
+        "EXCLUSIVE: {user} Discovered {event}",
+        "ALERT: {user} Found {event}",
+        "SCANDAL: {user} Exposed for {event}",
+        "UNBELIEVABLE: {user} Documented {event}",
+        "CAUGHT RED-HANDED: {user} {event}",
+        "LEAKED FOOTAGE: {user} Filmed {event}",
+        "CONSPIRACY CONFIRMED: {user} Actually {event}",
+        "HIDDEN CAMERA REVEALS: {user} {event}",
+        "ANONYMOUS SOURCE CONFIRMS: {user} {event}",
+        "SECURITY FOOTAGE SHOWS: {user} {event}",
+        "LIVE ON SCENE: {user} Currently {event}",
+        "UNDERCOVER INVESTIGATION: {user} {event}"
     ];
 
     const headlinesWithoutEvent = [
@@ -224,6 +224,10 @@ module.exports = {
         iconURL: interaction.client.user.displayAvatarURL() 
       });
 
-    await interaction.reply({ embeds: [newsEmbed] });
+    // Send the news embed to the channel
+    await interaction.channel.send({ embeds: [newsEmbed] });
+    
+    // Send a hidden confirmation to the command user
+    await interaction.reply({ content: 'Breaking news has been reported! 📰', ephemeral: true });
   },
 };
