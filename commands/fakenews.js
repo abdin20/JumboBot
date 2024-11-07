@@ -145,8 +145,9 @@ module.exports = {
     const newsImages = [
       'https://lobfile.com/file/LWeWHcW3.jpg', // LeBron shocked
       'https://chhsnews.net/wp-content/uploads/2022/11/Screenshot-2022-11-03-3.48.53-PM.png', // lebron shocked 2
-      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRH2hhew94XIxmxXJnhGkDu3IbL_WXiyjYyhg&s' //lebron shocked 3
-
+      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRH2hhew94XIxmxXJnhGkDu3IbL_WXiyjYyhg&s', //lebron shocked 3
+      'https://lobfile.com/file/KV4kzrwG.jpg', //lebron crying
+      'https://lobfile.com/file/cZ5GcZbk.jpg' //lebron crying 2
     ];
 
     const expertNames = [
