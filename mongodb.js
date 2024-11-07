@@ -222,20 +222,20 @@ exports.setWordScoreChannel = async function(guildId, channelId) {
     return result?.channelId;
   }
   
-  // Update word game score - now without guildId
-  exports.updateWordScore = async function(userId, game, score, puzzleNumber) {
+  // Update word game score with detailed tracking
+  exports.updateWordScore = async function(userId, username, game, score, puzzleNumber) {
     // First check if this puzzle has already been recorded
     const existing = await mongodClient.db("userData").collection("wordScores")
       .findOne({
         userId: userId,
         game: game,
-        completedPuzzles: puzzleNumber
+        "puzzles.number": puzzleNumber
       });
-  
+
     if (existing) {
       return false; // Already recorded this puzzle
     }
-  
+
     // Update or create the score document
     await mongodClient.db("userData").collection("wordScores")
       .updateOne(
@@ -244,22 +244,35 @@ exports.setWordScoreChannel = async function(guildId, channelId) {
           game: game
         },
         {
-          $inc: {
-            totalScore: score,
-            gamesPlayed: 1
+          $set: {
+            username: username // Keep username updated
           },
           $push: {
-            completedPuzzles: puzzleNumber
+            puzzles: {
+              number: puzzleNumber,
+              score: score,
+              date: new Date()
+            }
           }
         },
         { upsert: true }
       );
       
-    return true; // Successfully recorded
+    return true;
   }
-  // Get word scores for a game (globally)
+
+  // Get word scores with calculated totals
   exports.getWordScores = async function(game) {
-    return await mongodClient.db("userData").collection("wordScores")
+    const scores = await mongodClient.db("userData").collection("wordScores")
       .find({ game: game })
       .toArray();
+
+    // Calculate totals for each user
+    return scores.map(user => ({
+      userId: user.userId,
+      username: user.username,
+      puzzles: user.puzzles,
+      gamesPlayed: user.puzzles.length,
+      totalScore: user.puzzles.reduce((sum, puzzle) => sum + puzzle.score, 0)
+    }));
   }

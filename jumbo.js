@@ -365,7 +365,7 @@ client.on(Events.MessageCreate, async (message) => {
   const scoreChannel = await mongo.getWordScoreChannel(message.guildId);
   if (message.channelId !== scoreChannel) return;
 
-  // Updated Wordle pattern to handle the asterisk
+  // Wordle pattern
   const wordlePattern = /Wordle (\d+,\d+|\d+) (X|\d)\/\d\*?\n\n[🟩⬛🟨\n]+/;
   const wordleMatch = message.content.match(wordlePattern);
 
@@ -375,6 +375,7 @@ client.on(Events.MessageCreate, async (message) => {
     
     const recorded = await mongo.updateWordScore(
         message.author.id,
+        message.author.username,
         "wordle",
         score,
         puzzleNumber
@@ -390,7 +391,7 @@ client.on(Events.MessageCreate, async (message) => {
     }
   }
 
-  // Check for Connections score
+  // Connections pattern
   const connectionsPattern = /Connections\s*\nPuzzle #(\d+)\s*\n((?:[🟦🟨🟩🟪]{4}\s*\n*)+)/;
   const connectionsMatch = message.content.match(connectionsPattern);
   
@@ -398,20 +399,18 @@ client.on(Events.MessageCreate, async (message) => {
     const puzzleNumber = parseInt(connectionsMatch[1]);
     const rows = connectionsMatch[2].split('\n').filter(row => row.trim());
     
-    // Check if solution is complete by looking for rows of same color
     const hasAllGreen = rows.some(row => row === '🟩🟩🟩🟩');
     const hasAllYellow = rows.some(row => row === '🟨🟨🟨🟨');
     const hasAllBlue = rows.some(row => row === '🟦🟦🟦🟦');
     const hasAllPurple = rows.some(row => row === '🟪🟪🟪🟪');
     
     const isComplete = hasAllGreen && hasAllYellow && hasAllBlue && hasAllPurple;
-    
-    // Base score is number of attempts, add 8 if incomplete
     const attempts = rows.length;
     const score = isComplete ? attempts : attempts + 8;
     
     const recorded = await mongo.updateWordScore(
       message.author.id,
+      message.author.username,
       "connections",
       score,
       puzzleNumber
@@ -419,7 +418,7 @@ client.on(Events.MessageCreate, async (message) => {
     
     if (recorded) {
       if (!isComplete) {
-        await message.react('💀'); // Failed/incomplete attempt
+        await message.react('💀');
       } else if (attempts <= 4) {
         await message.react('🏆');
       } else if (attempts <= 6) {

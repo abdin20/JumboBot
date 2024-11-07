@@ -78,21 +78,52 @@ module.exports = {
         return aAvg - bAvg;
       });
 
-      const embed = new EmbedBuilder()
+      // Create leaderboard text with all players
+      const leaderboardText = sortedScores.map((score, i) => {
+        const avg = (score.totalScore / score.gamesPlayed).toFixed(2);
+        const medal = ['🥇','🥈','🥉'][i] || `${i + 1}.`;
+        return `${medal} ${score.username} - ${avg} avg (${score.gamesPlayed} games)\n` +
+               `Last 5 scores: ${score.puzzles.slice(-5).map(p => p.score).join(', ')}`;
+      }).join('\n\n');
+
+      // Split leaderboard into chunks if it's too long for one message
+      const chunks = [];
+      let currentChunk = '';
+      
+      leaderboardText.split('\n\n').forEach((entry) => {
+        if (currentChunk.length + entry.length + 2 > 4000) { // Discord's limit is 4096
+          chunks.push(currentChunk);
+          currentChunk = entry;
+        } else {
+          currentChunk += (currentChunk ? '\n\n' : '') + entry;
+        }
+      });
+      if (currentChunk) chunks.push(currentChunk);
+
+      // Send first embed
+      const firstEmbed = new EmbedBuilder()
         .setColor("#0099ff")
         .setTitle(`${game.charAt(0).toUpperCase() + game.slice(1)} Leaderboard`)
-        .setDescription(
-          sortedScores.slice(0, 10).map((score, i) => {
-            const avg = (score.totalScore / score.gamesPlayed).toFixed(2);
-            return `${['🥇','🥈','🥉'][i] || `${i + 1}.`} <@${score.userId}> - ${avg} avg (${score.gamesPlayed} games)`;
-          }).join('\n')
-        )
+        .setDescription(chunks[0])
         .setFooter({
-          text: "🕊️ Long Live Jumbo 🕊️",
+          text: chunks.length > 1 ? `Page 1/${chunks.length}` : "🕊️ Long Live Jumbo 🕊️",
           iconURL: "https://i.imgur.com/qJMLlxG.jpeg",
         });
 
-      await interaction.reply({ embeds: [embed] });
+      await interaction.reply({ embeds: [firstEmbed] });
+
+      // Send additional embeds if needed
+      for (let i = 1; i < chunks.length; i++) {
+        const embed = new EmbedBuilder()
+          .setColor("#0099ff")
+          .setDescription(chunks[i])
+          .setFooter({
+            text: `Page ${i + 1}/${chunks.length}`,
+            iconURL: "https://i.imgur.com/qJMLlxG.jpeg",
+          });
+
+        await interaction.followUp({ embeds: [embed] });
+      }
     }
   }
 };
