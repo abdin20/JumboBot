@@ -404,9 +404,12 @@ client.on(Events.MessageCreate, async (message) => {
     const hasAllBlue = rows.some(row => row === '🟦🟦🟦🟦');
     const hasAllPurple = rows.some(row => row === '🟪🟪🟪🟪');
     
-    const isComplete = hasAllGreen && hasAllYellow && hasAllBlue && hasAllPurple;
+    const correctRows = [hasAllGreen, hasAllYellow, hasAllBlue, hasAllPurple].filter(Boolean).length;
+    const isComplete = correctRows === 4;
     const attempts = rows.length;
-    const score = isComplete ? attempts : attempts + 8;
+    
+    // New scoring logic
+    const score = isComplete ? attempts : (11 - correctRows);
     
     const recorded = await mongo.updateWordScore(
       message.author.id,
