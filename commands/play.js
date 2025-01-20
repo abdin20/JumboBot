@@ -25,6 +25,8 @@ const urlParser = require("js-video-url-parser");
 var mongo = require("../mongodb.js");
 var auth = process.env.GOOGLE_API;
 
+const youtubedl = require('youtube-dl-exec')
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("play")
@@ -282,6 +284,10 @@ module.exports = {
         console.log(err);
       });
 
+      connection.on('stateChange', (oldState, newState) => {
+        console.log(`Connection transitioned from ${oldState.status} to ${newState.status}`);
+      });
+
       //get the song queue
       playingSong = results.songs.shift();
       //shift the queue
@@ -303,55 +309,38 @@ module.exports = {
 
       const player = createAudioPlayer();
 
-      // const resource = createAudioResource(ytdl(url, { filter: 'audioonly'}));
-      // const resource = createAudioResource(ytdl(url, {filter: "audioonly", opusEncoded: true, encoderArgs: ['-af', 'bass=g=10']}));
-      urlParser.parse(url);
-      let stream;
-      let resource;
       if (queryType === "youtube") {
-        // stream = await play.stream(url, { seek });
-        // resource = createAudioResource(stream.stream, {
-        //   inputType: StreamType.Arbitrary
-        // });
+        console.log("Starting YouTube stream...");
+        try {
+          let options = {
+            output: '-',
+            quiet: true,
+            format: 'bestaudio',
+            audioFormat: 'mp3',
+          };
 
+          // Add seeking if specified
+          if (seek) {
+            options = {
+              ...options,
+              downloadSections: `*${seek}-inf`, // Start from seek position to the end
+            };
+            console.log(`Attempting to seek to ${seek} seconds`);
+          }
 
-        // stream = ytdl(url, { filter: 'audioonly', highWaterMark: 1 << 25});
-        // const passthrough = new PassThrough();
-        // stream.pipe(passthrough);
-        // resource = createAudioResource(passthrough, {
-        //   inputType: StreamType.Arbitrary, // Set the appropriate stream type
-        // });
-
-        stream = ytdl(url, { filter: 'audioonly', highWaterMark: 1 << 25 });
-  
-        if (seek) {
-          const ffmpeg = spawn('ffmpeg', [
-            '-ss', seek.toString(),   // Seek to the specified time in seconds
-            '-i', 'pipe:0',           // Input from stdin
-            '-f', 'opus',             // Output format
-            '-vn',                    // No video
-            'pipe:1'                  // Output to stdout
-          ]);
-          
-          stream.pipe(ffmpeg.stdin);
-          
-          const passthrough = new PassThrough();
-          ffmpeg.stdout.pipe(passthrough);
-          
-          resource = createAudioResource(passthrough, {
-            inputType: StreamType.Arbitrary, // Adjust stream type as needed
+          const stream = youtubedl.exec(url, options, { 
+            stdio: ['ignore', 'pipe', 'ignore'] 
           });
-        } else {
-          const passthrough = new PassThrough();
-          stream.pipe(passthrough);
-          
-          resource = createAudioResource(passthrough, {
-            inputType: StreamType.Arbitrary, // Adjust stream type as needed
+
+          resource = createAudioResource(stream.stdout, {
+            inputType: StreamType.Arbitrary,
+            inlineVolume: true
           });
+
+          console.log("Resource created" + (seek ? ` with seek to ${seek}s` : ''));
+        } catch (error) {
+          console.error('Error creating stream:', error);
         }
-
-
-
       } else if (queryType === "direct") {
         // Create a stream using ffmpeg for direct file links
         const response = await axios({
@@ -361,8 +350,7 @@ module.exports = {
         });
       
         // Use ffmpeg to process the stream
-        resource = createAudioResource(response.data, {
-          inputType: StreamType.Arbitrary,
+        resource = createAudioResource(response.data, {  inputType: StreamType.Arbitrary,
           inlineVolume: true,
           ffmpegExecutable: ffmpeg
         });
@@ -384,16 +372,20 @@ module.exports = {
         }
         this.playMusic(interaction);
       });
-      player.on("error", async (error) => {
-        console.error(`Player Error: ${error.message}`);
-        player.stop();
-        const nextresults = await mongo.findQueueByGuildId(interaction.guildId);
-        if (nextresults) {
-          console.log(`Deleting queue for ${interaction.guild.name}`);
-          await mongo.deleteQueueByObject(nextresults);
-        }
-        let connection = getVoiceConnection(interaction.guildId);
-        connection?.disconnect();
+      player.on('error', error => {
+        console.error('Error:', error.message);
+      });
+      resource.playStream.on('error', error => {
+        console.error('Stream Error:', error);
+      });
+
+      // Add these event listeners
+      player.on('stateChange', (oldState, newState) => {
+        console.log(`Player state changed from ${oldState.status} to ${newState.status}`);
+      });
+
+      connection.on('debug', (message) => {
+        console.log('Voice Connection Debug:', message);
       });
     } catch (err) {
       console.log("Play.js error catcher: ");
