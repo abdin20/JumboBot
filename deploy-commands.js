@@ -36,6 +36,7 @@ for (const file of commandFiles) {
         );
         
         console.log(`Successfully reloaded ${data.length} application (/) commands.`);
+        return
     } catch (error) {
         // And of course, make sure you catch and log any errors!
         console.error(error);
