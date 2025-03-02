@@ -100,7 +100,7 @@ module.exports = {
             var bogTotal = 0;
             var bogOccurences = 0;
             bogHistory.forEach((x) => {
-                if ( x.duration>=10000 && x.duration <= 3600000) {
+                if ( x.duration>=60000 && x.duration <= 2400000) {
                     bogTotal += x.duration
                     bogOccurences += 1;
                 }
