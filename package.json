@@ -17,6 +17,7 @@
     "ffmpeg-static": "^5.2.0",
     "fluent-ffmpeg": "^2.1.2",
     "fs": "^0.0.1-security",
+    "google-tts-api": "^2.0.2",
     "got": "^12.3.1",
     "js-video-url-parser": "^0.5.1",
     "mongodb": "^4.8.1",
