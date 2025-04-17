@@ -48,8 +48,9 @@ const { generateDependencyReport } = require('@discordjs/voice');
 const soundImports = require("./sounds.js");
 const clipNames = soundImports.clipNames;
 const clips = soundImports.clips;
-const actualClips=soundImports.clipsDict
-
+const actualClips = soundImports.clipsDict
+const keyWordImports = require('./keywords.js');
+const { suicideKeywords, inspirationalPeople } = keyWordImports;
 var mongo = require("./mongodb.js");
 
 const token = process.env.BOT_TOKEN;
@@ -87,7 +88,7 @@ async function downloadSupportVideo() {
         url: videoUrl,
         responseType: 'arraybuffer'
       });
-      
+
       fs.writeFileSync(videoPath, response.data);
       console.log('Support video downloaded successfully');
     } catch (error) {
@@ -401,45 +402,45 @@ client.on(Events.MessageCreate, async (message) => {
   if (wordleMatch) {
     const puzzleNumber = parseInt(wordleMatch[1].replace(',', ''));
     const score = wordleMatch[2] === 'X' ? 7 : parseInt(wordleMatch[2]);
-    
+
     const recorded = await mongo.updateWordScore(
-        message.author.id,
-        message.author.username,
-        "wordle",
-        score,
-        puzzleNumber
+      message.author.id,
+      message.author.username,
+      "wordle",
+      score,
+      puzzleNumber
     );
-    
+
     if (recorded) {
-        if (score === 7) await message.react('💀');
-        else if (score <= 2) await message.react('🏆');
-        else if (score <= 4) await message.react('👏');
-        else await message.react('🎯');
+      if (score === 7) await message.react('💀');
+      else if (score <= 2) await message.react('🏆');
+      else if (score <= 4) await message.react('👏');
+      else await message.react('🎯');
     } else {
-        await message.react('🔄');
+      await message.react('🔄');
     }
   }
 
   // Connections pattern
   const connectionsPattern = /Connections\s*\nPuzzle #(\d+)\s*\n((?:[🟦🟨🟩🟪]{4}\s*\n*)+)/;
   const connectionsMatch = message.content.match(connectionsPattern);
-  
+
   if (connectionsMatch) {
     const puzzleNumber = parseInt(connectionsMatch[1]);
     const rows = connectionsMatch[2].split('\n').filter(row => row.trim());
-    
+
     const hasAllGreen = rows.some(row => row === '🟩🟩🟩🟩');
     const hasAllYellow = rows.some(row => row === '🟨🟨🟨🟨');
     const hasAllBlue = rows.some(row => row === '🟦🟦🟦🟦');
     const hasAllPurple = rows.some(row => row === '🟪🟪🟪🟪');
-    
+
     const correctRows = [hasAllGreen, hasAllYellow, hasAllBlue, hasAllPurple].filter(Boolean).length;
     const isComplete = correctRows === 4;
     const attempts = rows.length;
-    
+
     // New scoring logic
     const score = isComplete ? attempts : (11 - correctRows);
-    
+
     const recorded = await mongo.updateWordScore(
       message.author.id,
       message.author.username,
@@ -447,7 +448,7 @@ client.on(Events.MessageCreate, async (message) => {
       score,
       puzzleNumber
     );
-    
+
     if (recorded) {
       if (!isComplete) {
         await message.react('💀');
@@ -467,37 +468,49 @@ client.on(Events.MessageCreate, async (message) => {
 // Suicide prevention message handler - completely separate from the Wordle handler
 client.on(Events.MessageCreate, async (message) => {
   if (message.author.bot) return;
-  
+
   // Check for suicide-related keywords
-  const suicideKeywords = ["kill myself", "kill my self", "kill self"];
   const messageContent = message.content.toLowerCase();
-  
+
   if (suicideKeywords.some(keyword => messageContent.includes(keyword))) {
+    // Fisher-Yates shuffle algorithm for better randomization
+    const shuffleArray = (array) => {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    };
+    
+    // Get 3 random names from the inspirational people list
+    const shuffled = shuffleArray([...inspirationalPeople]);
+    const selectedNames = shuffled.slice(0, 3);
+    
     // Create an embed with a supportive message
     const supportEmbed = new EmbedBuilder()
       .setColor('#FF0000')
       .setTitle('Never kill yourself.')
-      .setDescription('Did Ghandi give up? Did Colonel Sanders give up? Did the Wright brothers give up? No, they didn\'t. They kept going. You can too.')
+      .setDescription(`Did ${selectedNames[0]} give up?\nDid ${selectedNames[1]} give up?\nDid ${selectedNames[2]} give up?\n\nNo, they didn't. They kept going. You can too.`)
       .setTimestamp();
-    
+
     try {
       // Check if the video file exists
       if (fs.existsSync(videoPath)) {
         // Create an attachment from the local file
         const attachment = new AttachmentBuilder(videoPath);
-        
+
         // Send the message with the embed and video attachment
-        await message.channel.send({ 
+        await message.channel.send({
           embeds: [supportEmbed],
           files: [attachment]
         });
-        
+
         // Also send a DM to the user for privacy
         try {
           const dmEmbed = new EmbedBuilder().setColor('#FF0000')
-          .setTitle('Never kill yourself.')
-          .setDescription("I noticed you might be having thoughts of suicide. Please know that you're not alone and there are people who care about you and want to help.").setTimestamp();
-          await message.author.send({ 
+            .setTitle('Never kill yourself.')
+            .setDescription("I noticed you might be having thoughts of suicide. Please know that you're not alone and there are people who care about you and want to help.").setTimestamp();
+          await message.author.send({
             embeds: [dmEmbed],
             files: [attachment]
           });
@@ -507,17 +520,17 @@ client.on(Events.MessageCreate, async (message) => {
       } else {
         // Fallback if the video file doesn't exist
         console.error('Support video file not found');
-        await message.channel.send({ 
+        await message.channel.send({
           content: 'https://lithi.io/file/kvGFHpFy.mp4',
-          embeds: [supportEmbed] 
+          embeds: [supportEmbed]
         });
       }
     } catch (error) {
       console.error('Error sending video:', error);
       // Fallback to just sending the embed if there's an error
-      await message.channel.send({ 
+      await message.channel.send({
         content: 'https://lithi.io/file/kvGFHpFy.mp4',
-        embeds: [supportEmbed] 
+        embeds: [supportEmbed]
       });
     }
   }
