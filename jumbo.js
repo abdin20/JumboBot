@@ -7,7 +7,8 @@ const {
   Collection,
   CommandInteractionOptionResolver,
   EmbedBuilder,
-  Events
+  Events,
+  AttachmentBuilder
 } = require("discord.js");
 const {
   joinVoiceChannel,
@@ -48,7 +49,8 @@ const soundImports = require("./sounds.js");
 const clipNames = soundImports.clipNames;
 const clips = soundImports.clips;
 const actualClips = soundImports.clipsDict
-
+const keyWordImports = require('./keywords.js');
+const { suicideKeywords, inspirationalPeople } = keyWordImports;
 var mongo = require("./mongodb.js");
 
 const token = process.env.BOT_TOKEN;
@@ -70,10 +72,38 @@ for (const file of commandFiles) {
   // With the key as the command name and the value as the exported module
   client.commands.set(command.data.name, command);
 }
+
+// Add this after the client initialization but before the event handlers
+// Path to store the downloaded video
+const videoPath = path.join(__dirname, 'support_video.mp4');
+
+// Function to download the video file if it doesn't exist
+async function downloadSupportVideo() {
+  if (!fs.existsSync(videoPath)) {
+    console.log('Downloading support video...');
+    try {
+      const videoUrl = 'https://lithi.io/file/kvGFHpFy.mp4';
+      const response = await axios({
+        method: 'get',
+        url: videoUrl,
+        responseType: 'arraybuffer'
+      });
+
+      fs.writeFileSync(videoPath, response.data);
+      console.log('Support video downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading support video:', error);
+    }
+  } else {
+    console.log('Support video already exists');
+  }
+}
+
 // When the client is ready, run this code (only once)
 
 client.once("ready", async () => {
   await mongo.deleteAllQueues();
+  await downloadSupportVideo(); // Download the video when the bot starts
 
   client.user.setPresence({
     status: "online", // You can set the status to online, idle, dnd or invisible
@@ -526,6 +556,77 @@ client.on(Events.MessageCreate, async (message) => {
       }
     } else {
       await message.react('🔄');
+    }
+  }
+});
+
+// Suicide prevention message handler - completely separate from the Wordle handler
+client.on(Events.MessageCreate, async (message) => {
+  if (message.author.bot) return;
+
+  // Check for suicide-related keywords
+  const messageContent = message.content.toLowerCase();
+
+  if (suicideKeywords.some(keyword => messageContent.includes(keyword))) {
+    // Fisher-Yates shuffle algorithm for better randomization
+    const shuffleArray = (array) => {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    };
+    
+    // Get 3 random names from the inspirational people list
+    const shuffled = shuffleArray([...inspirationalPeople]);
+    const selectedNames = shuffled.slice(0, 3);
+    
+    // Create an embed with a supportive message
+    const supportEmbed = new EmbedBuilder()
+      .setColor('#FF0000')
+      .setTitle('Never kill yourself.')
+      .setDescription(`Did ${selectedNames[0]} give up?\nDid ${selectedNames[1]} give up?\nDid ${selectedNames[2]} give up?\n\nNo, they didn't. They kept going. You can too.`)
+      .setTimestamp();
+
+    try {
+      // Check if the video file exists
+      if (fs.existsSync(videoPath)) {
+        // Create an attachment from the local file
+        const attachment = new AttachmentBuilder(videoPath);
+
+        // Send the message with the embed and video attachment
+        await message.channel.send({
+          embeds: [supportEmbed],
+          files: [attachment]
+        });
+
+        // Also send a DM to the user for privacy
+        try {
+          const dmEmbed = new EmbedBuilder().setColor('#FF0000')
+            .setTitle('Never kill yourself.')
+            .setDescription("I noticed you might be having thoughts of suicide. Please know that you're not alone and there are people who care about you and want to help.").setTimestamp();
+          await message.author.send({
+            embeds: [dmEmbed],
+            files: [attachment]
+          });
+        } catch (error) {
+          console.error('Could not send DM to user:', error);
+        }
+      } else {
+        // Fallback if the video file doesn't exist
+        console.error('Support video file not found');
+        await message.channel.send({
+          content: 'https://lithi.io/file/kvGFHpFy.mp4',
+          embeds: [supportEmbed]
+        });
+      }
+    } catch (error) {
+      console.error('Error sending video:', error);
+      // Fallback to just sending the embed if there's an error
+      await message.channel.send({
+        content: 'https://lithi.io/file/kvGFHpFy.mp4',
+        embeds: [supportEmbed]
+      });
     }
   }
 });

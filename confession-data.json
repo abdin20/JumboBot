@@ -1,0 +1,38 @@
+{
+    "channels": {
+        "635966592303366154": {
+            "guildName": "no goomba zone",
+            "guildConfessionChannel": "635967997265182771"
+        },
+        "690738765827932161": {
+            "guildName": "🇦🇿 𝓑𝓡u𝓩𝓩ington 🇦🇿",
+            "guildConfessionChannel": "1097373593035350067"
+        }
+    },
+    "confessions": [
+        {
+            "number": 1,
+            "confession": "test"
+        },
+        {
+            "number": 2,
+            "confession": "test"
+        },
+        {
+            "number": 3,
+            "confession": "ch"
+        },
+        {
+            "number": 4,
+            "confession": "test"
+        },
+        {
+            "number": 5,
+            "confession": "i kissed naymul"
+        },
+        {
+            "number": 6,
+            "confession": "i was at a diddy party"
+        }
+    ]
+}
