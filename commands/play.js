@@ -41,7 +41,7 @@ module.exports = {
   // main function
   async execute(interaction) {
     if (!interaction.member.voice.channelId) {
-      interaction.reply({
+      await interaction.reply({
         content: "You need to be in a voice channel!",
         ephemeral: true,
       });
@@ -53,11 +53,11 @@ module.exports = {
       searchQuery
     );
     if (!url) {
-      interaction.reply({ content: "No results found", ephemeral: true });
+      await interaction.reply({ content: "No results found", ephemeral: true });
       return;
     }
-    interaction.reply({ content: "Success!", ephemeral: true });
-    interaction.deleteReply();
+    await interaction.reply({ content: "Success!", ephemeral: true });
+    await interaction.deleteReply();
     // process this info into queue
     await this.processQueue(interaction, title, url, query, thumbnail, {
       priority: false,
