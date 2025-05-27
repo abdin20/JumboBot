@@ -53,6 +53,8 @@ const actualClips = soundImports.clipsDict
 const keyWordImports = require('./keywords.js');
 const { suicideKeywords, inspirationalPeople } = keyWordImports;
 var mongo = require("./mongodb.js");
+const http = require('http');
+const HEALTH_PORT = process.env.HEALTH_PORT || 3001;
 
 const token = process.env.BOT_TOKEN;
 // shane london, connor, aaron
@@ -144,7 +146,7 @@ client.on('messageCreate', async (message) => {
   }
 
   // Handle AI questions when bot is mentioned
-  if (message.mentions.has(client.user)) {
+  if (message.mentions.has(client.user) && !message.mentions.everyone) {
     try {
       console.log(`Mention detected from ${message.author.tag}: ${message.content}`);
 
@@ -630,6 +632,18 @@ client.on(Events.MessageCreate, async (message) => {
       });
     }
   }
+});
+
+http.createServer((req, res) => {
+  if (req.url === '/health') {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('OK');
+  } else {
+    res.writeHead(404);
+    res.end();
+  }
+}).listen(HEALTH_PORT, () => {
+  console.log(`Health check endpoint listening on port ${HEALTH_PORT}`);
 });
 
 client.login(token);
