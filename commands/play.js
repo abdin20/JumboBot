@@ -1,3 +1,13 @@
+if (typeof File === 'undefined') {
+  global.File = class File {
+    constructor(bits, name, options = {}) {
+      this.name = name;
+      this.lastModified = options.lastModified || Date.now();
+      this.size = bits.length;
+      this.type = options.type || '';
+    }
+  };
+}
 const { SlashCommandBuilder } = require("discord.js");
 const {
   joinVoiceChannel,
@@ -313,26 +323,20 @@ module.exports = {
         console.log("Starting YouTube stream...");
         try {
           let options = {
-            output: '-',
-            quiet: true,
-            format: 'bestaudio',
-            audioFormat: 'mp3',
+            filter: 'audioonly',
+            quality: 'highestaudio',
+            highWaterMark: 1 << 25
           };
 
           // Add seeking if specified
           if (seek) {
-            options = {
-              ...options,
-              downloadSections: `*${seek}-inf`, // Start from seek position to the end
-            };
+            options.begin = `${seek}s`;
             console.log(`Attempting to seek to ${seek} seconds`);
           }
 
-          const stream = youtubedl.exec(url, options, { 
-            stdio: ['ignore', 'pipe', 'ignore'] 
-          });
+          const stream = ytdl(url, options);
 
-          resource = createAudioResource(stream.stdout, {
+          resource = createAudioResource(stream, {
             inputType: StreamType.Arbitrary,
             inlineVolume: true
           });
