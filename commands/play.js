@@ -24,9 +24,9 @@ const axios = require('axios');
 const ffmpeg = require('ffmpeg-static');
 const { createReadStream } = require('node:fs');
 
-const play = require("play-dl");
+// const play = require("play-dl");
 
-const ytdl = require("@distube/ytdl-core");
+// const ytdl = require("@distube/ytdl-core");
 const { PassThrough } = require('stream');
 const { spawn } = require('child_process');
 const youtube = require("youtube-metadata-from-url");
@@ -323,20 +323,27 @@ module.exports = {
         console.log("Starting YouTube stream...");
         try {
           let options = {
-            filter: 'audioonly',
-            quality: 'highestaudio',
-            highWaterMark: 1 << 25
+            format: 'bestaudio[ext=webm]/bestaudio[ext=m4a]/bestaudio',
+            audioFormat: 'mp3',
+            audioQuality: '0',
+            noPlaylist: true,
+            noWarnings: true,
+            noProgress: true,
+            output: '-'
           };
 
           // Add seeking if specified
           if (seek) {
-            options.begin = `${seek}s`;
+            options.postprocessorArgs = `-ss ${seek}`;
             console.log(`Attempting to seek to ${seek} seconds`);
           }
 
-          const stream = ytdl(url, options);
+          // Use youtube-dl-exec to create stream
+          const stream = youtubedl.exec(url, options, {
+            stdio: ['ignore', 'pipe', 'ignore']
+          });
 
-          resource = createAudioResource(stream, {
+          resource = createAudioResource(stream.stdout, {
             inputType: StreamType.Arbitrary,
             inlineVolume: true
           });
