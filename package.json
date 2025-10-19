@@ -28,7 +28,7 @@
     "rcon-client": "^4.2.5",
     "sodium-native": "^4.0.4",
     "youtube-api-v3-search": "^1.2.1",
-    "youtube-dl-exec": "^3.0.25",
+    "youtube-dl-exec": "^3.0.26",
     "youtube-id": "^1.0.0",
     "youtube-metadata-from-url": "^1.0.3",
     "ytdl-core": "^4.11.5",
