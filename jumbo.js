@@ -619,7 +619,7 @@ client.on(Events.MessageCreate, async (message) => {
         // Fallback if the video file doesn't exist
         console.error('Support video file not found');
         await message.channel.send({
-          content: 'https://lithi.io/file/kvGFHpFy.mp4',
+          content: 'https://lithi.io/file/H6THEff9.mp4',
           embeds: [supportEmbed]
         });
       }

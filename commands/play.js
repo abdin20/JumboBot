@@ -322,14 +322,14 @@ module.exports = {
       if (queryType === "youtube") {
         console.log("Starting YouTube stream...");
         try {
+          // More flexible format selection with fallbacks
           let options = {
-            format: 'bestaudio[ext=webm]/bestaudio[ext=m4a]/bestaudio',
-            audioFormat: 'mp3',
-            audioQuality: '0',
+            format: 'bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best[height<=720]/best',
             noPlaylist: true,
             noWarnings: true,
             noProgress: true,
-            output: '-'
+            output: '-',
+            // Use yt-dlp compatible format selection
           };
 
           // Add seeking if specified
@@ -351,6 +351,33 @@ module.exports = {
           console.log("Resource created" + (seek ? ` with seek to ${seek}s` : ''));
         } catch (error) {
           console.error('Error creating stream:', error);
+          // Try with even more basic options as fallback
+          try {
+            console.log('Trying fallback format...');
+            const fallbackOptions = {
+              format: 'best',
+              noPlaylist: true,
+              output: '-'
+            };
+            
+            if (seek) {
+              fallbackOptions.postprocessorArgs = `-ss ${seek}`;
+            }
+
+            const fallbackStream = youtubedl.exec(url, fallbackOptions, {
+              stdio: ['ignore', 'pipe', 'ignore']
+            });
+
+            resource = createAudioResource(fallbackStream.stdout, {
+              inputType: StreamType.Arbitrary,
+              inlineVolume: true
+            });
+
+            console.log("Fallback resource created successfully");
+          } catch (fallbackError) {
+            console.error('Fallback also failed:', fallbackError);
+            throw fallbackError;
+          }
         }
       } else if (queryType === "direct") {
         // Create a stream using ffmpeg for direct file links
