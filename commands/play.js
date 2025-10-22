@@ -320,65 +320,34 @@ module.exports = {
       const player = createAudioPlayer();
 
       if (queryType === "youtube") {
-        console.log("Starting YouTube stream...");
-        try {
-          // More flexible format selection with fallbacks
-          let options = {
-            format: 'bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best[height<=720]/best',
-            noPlaylist: true,
-            noWarnings: true,
-            noProgress: true,
-            output: '-',
-            // Use yt-dlp compatible format selection
-          };
+        console.log("Starting YouTube stream with youtube-dl-exec...");
+        
+        // Use youtube-dl-exec with settings to prevent fragment files
+        let options = {
+          format: 'best',
+          noPlaylist: true,
+          noWarnings: true,
+          noProgress: true,
+          output: '-',
+        };
 
-          // Add seeking if specified
-          if (seek) {
-            options.postprocessorArgs = `-ss ${seek}`;
-            console.log(`Attempting to seek to ${seek} seconds`);
-          }
-
-          // Use youtube-dl-exec to create stream
-          const stream = youtubedl.exec(url, options, {
-            stdio: ['ignore', 'pipe', 'ignore']
-          });
-
-          resource = createAudioResource(stream.stdout, {
-            inputType: StreamType.Arbitrary,
-            inlineVolume: true
-          });
-
-          console.log("Resource created" + (seek ? ` with seek to ${seek}s` : ''));
-        } catch (error) {
-          console.error('Error creating stream:', error);
-          // Try with even more basic options as fallback
-          try {
-            console.log('Trying fallback format...');
-            const fallbackOptions = {
-              format: 'best',
-              noPlaylist: true,
-              output: '-'
-            };
-            
-            if (seek) {
-              fallbackOptions.postprocessorArgs = `-ss ${seek}`;
-            }
-
-            const fallbackStream = youtubedl.exec(url, fallbackOptions, {
-              stdio: ['ignore', 'pipe', 'ignore']
-            });
-
-            resource = createAudioResource(fallbackStream.stdout, {
-              inputType: StreamType.Arbitrary,
-              inlineVolume: true
-            });
-
-            console.log("Fallback resource created successfully");
-          } catch (fallbackError) {
-            console.error('Fallback also failed:', fallbackError);
-            throw fallbackError;
-          }
+        // Add seeking if specified
+        if (seek) {
+          options.postprocessorArgs = `-ss ${seek}`;
+          console.log(`Attempting to seek to ${seek} seconds`);
         }
+
+        // Use youtube-dl-exec to create stream
+        const stream = youtubedl.exec(url, options, {
+          stdio: ['ignore', 'pipe', 'ignore']
+        });
+
+        resource = createAudioResource(stream.stdout, {
+          inputType: StreamType.Arbitrary,
+          inlineVolume: true
+        });
+
+        console.log("youtube-dl-exec resource created successfully" + (seek ? ` with seek to ${seek}s` : ''));
       } else if (queryType === "direct") {
         // Create a stream using ffmpeg for direct file links
         const response = await axios({
@@ -428,6 +397,7 @@ module.exports = {
     } catch (err) {
       console.log("Play.js error catcher: ");
       console.log(err);
+      
       const nextresults = await mongo.findQueueByGuildId(interaction.guildId);
       if (nextresults) {
         console.log(`Deleting queue for ${interaction.guild.name}`);
@@ -436,5 +406,5 @@ module.exports = {
       let connection = getVoiceConnection(interaction.guildId);
       connection?.disconnect();
     }
-  },
+  }
 };
