@@ -106,6 +106,31 @@ async function downloadSupportVideo() {
 
 client.once("ready", async () => {
   await mongo.deleteAllQueues();
+  
+  // Delete files starting with --Frag
+  try {
+    const files = fs.readdirSync(__dirname);
+    const fragFiles = files.filter(file => file.startsWith('--Frag'));
+    
+    if (fragFiles.length > 0) {
+      console.log(`Found ${fragFiles.length} --Frag files to delete:`, fragFiles);
+      
+      fragFiles.forEach(file => {
+        const filePath = path.join(__dirname, file);
+        try {
+          fs.unlinkSync(filePath);
+          console.log(`Deleted: ${file}`);
+        } catch (error) {
+          console.error(`Failed to delete ${file}:`, error.message);
+        }
+      });
+    } else {
+      console.log('No --Frag files found to delete');
+    }
+  } catch (error) {
+    console.error('Error cleaning up --Frag files:', error);
+  }
+  
   await downloadSupportVideo(); // Download the video when the bot starts
 
   client.user.setPresence({
