@@ -85,7 +85,7 @@ async function downloadSupportVideo() {
   if (!fs.existsSync(videoPath)) {
     console.log('Downloading support video...');
     try {
-      const videoUrl = 'https://lithi.io/file/kvGFHpFy.mp4';
+      const videoUrl = 'https://lithi.io/file/H6THEff9.mp4';
       const response = await axios({
         method: 'get',
         url: videoUrl,
@@ -627,7 +627,7 @@ client.on(Events.MessageCreate, async (message) => {
       console.error('Error sending video:', error);
       // Fallback to just sending the embed if there's an error
       await message.channel.send({
-        content: 'https://lithi.io/file/kvGFHpFy.mp4',
+        content: 'https://lithi.io/file/H6THEff9.mp4',
         embeds: [supportEmbed]
       });
     }
