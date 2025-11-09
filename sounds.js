@@ -31,6 +31,10 @@ exports.clipsDict = [
     { "effect": "wowa wee wa its very nice", "link": "https://lobfile.com/file/SdIo.mp3" },
     { "effect": "you will never get this lalala", "link": "https://lobfile.com/file/w4ou.mp3" },
     { "effect": "my life be like ooh ahh ", "link": "https://lobfile.com/file/OReR.mp3",},
+    {'effect': 'family mart', 'link': 'https://lithi.io/file/AfSSNVKW.mp3'},
+    {'effect': 'major bag alert', 'link': 'https://lithi.io/file/ggcRF2W9.mp3'}, 
+    {'effect': 'don quixote', 'link': 'https://lithi.io/file/6km6RB6Q.mp3'},
+
 
 ]
 

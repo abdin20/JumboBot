@@ -335,6 +335,8 @@ const getRandomSoundEffect = (playerId, userName) => {
         // "https://lobfile.com/file/XxEz8aNg.mp3", carrie saying carrie
         "https://lobfile.com/file/1SDy.mp3",
         "https://lobfile.com/file/dWiB.mp3",
+        "https://lithi.io/file/AfSSNVKW.mp3",
+        'https://lithi.io/file/6km6RB6Q.mp3',
       ];
       const playerSongRand = Math.floor(Math.random() * playerSongs.length);
       return playerSongs[playerSongRand];
@@ -352,6 +354,7 @@ const getRandomSoundEffect = (playerId, userName) => {
         "https://lobfile.com/file/Wsq3.mp3",
         "https://lobfile.com/file/hxSK.mp3",
         "https://lobfile.com/file/bCXd.mp3",
+        'https://lithi.io/file/ggcRF2W9.mp3'
       ];
       const playerSongRand = Math.floor(Math.random() * playerSongs.length);
       return playerSongs[playerSongRand];
@@ -395,7 +398,8 @@ const getRandomSoundEffect = (playerId, userName) => {
         "https://lobfile.com/file/7Ek9PKrb.mp3",
         "https://lobfile.com/file/ixfJCEDv.mp3",
         "https://lobfile.com/file/cNeewrcK.m4a",
-        "https://lobfile.com/file/9QalgWL9.mp3"
+        "https://lobfile.com/file/9QalgWL9.mp3",
+        "https://lithi.io/file/AfSSNVKW.mp3"
       ];
       const playerSongRand = Math.floor(Math.random() * playerSongs.length);
       return playerSongs[playerSongRand];
