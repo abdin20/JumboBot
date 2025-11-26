@@ -75,7 +75,7 @@ for (const file of commandFiles) {
   // With the key as the command name and the value as the exported module
   client.commands.set(command.data.name, command);
 }
-
+// test
 // Add this after the client initialization but before the event handlers
 // Path to store the downloaded video
 const videoPath = path.join(__dirname, 'support_video.mp4');
