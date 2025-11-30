@@ -276,3 +276,37 @@ exports.setWordScoreChannel = async function(guildId, channelId) {
       totalScore: user.puzzles.reduce((sum, puzzle) => sum + puzzle.score, 0)
     }));
   }
+
+  // reminder stuff
+  // Create a new reminder
+  exports.createReminder = async function createReminder(reminderObject) {
+    const result = await mongodClient.db("userData").collection("reminders").insertOne(reminderObject);
+    console.log(`New reminder created with id: ${result.insertedId}`);
+  }
+
+  // Get all reminders that need to be sent (not sent yet and target date has passed)
+  exports.getPendingReminders = async function getPendingReminders() {
+    const now = new Date();
+    const result = await mongodClient.db("userData").collection("reminders")
+      .find({ 
+        sent: false,
+        targetDate: { $lte: now }
+      })
+      .toArray();
+    return result;
+  }
+
+  // Mark reminder as sent
+  exports.markReminderAsSent = async function markReminderAsSent(reminderId) {
+    await mongodClient.db("userData").collection("reminders")
+      .updateOne(
+        { _id: reminderId },
+        { $set: { sent: true, sentAt: new Date() } }
+      );
+  }
+
+  // Delete reminder
+  exports.deleteReminder = async function deleteReminder(reminderId) {
+    await mongodClient.db("userData").collection("reminders")
+      .deleteOne({ _id: reminderId });
+  }

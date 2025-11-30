@@ -143,6 +143,50 @@ client.once("ready", async () => {
     ],
   });
 
+  // Start reminder checker - runs every 5 minutes
+  async function checkReminders() {
+    try {
+      const pendingReminders = await mongo.getPendingReminders();
+      
+      for (const reminder of pendingReminders) {
+        try {
+          const guild = await client.guilds.fetch(reminder.guildId);
+          const channel = await guild.channels.fetch(reminder.channelId);
+          
+          if (channel && channel.isTextBased()) {
+            const reminderEmbed = new EmbedBuilder()
+              .setColor('#FFD700')
+              .setTitle('⏰ Reminder')
+              .setDescription(`<@${reminder.userId}>\n\n**${reminder.reminderText}**`)
+              .setFooter({
+                text: '🕊️ Long Live Jumbo 🕊️',
+                iconURL: 'https://i.imgur.com/qJMLlxG.jpeg',
+              })
+              .setTimestamp(reminder.targetDate);
+            
+            await channel.send({ embeds: [reminderEmbed] });
+            await mongo.markReminderAsSent(reminder._id);
+            console.log(`Sent reminder ${reminder._id} to user ${reminder.userId}`);
+          } else {
+            // Channel doesn't exist or is not a text channel
+            console.log(`Channel ${reminder.channelId} not found or not text-based for reminder ${reminder._id}`);
+            await mongo.markReminderAsSent(reminder._id);
+          }
+        } catch (error) {
+          console.error(`Error sending reminder ${reminder._id}:`, error);
+          // Mark as sent anyway to avoid retrying failed sends indefinitely
+          await mongo.markReminderAsSent(reminder._id);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking reminders:', error);
+    }
+  }
+
+  // Check reminders immediately on startup, then every 5 minutes
+  checkReminders();
+  setInterval(checkReminders, 5 * 60 * 1000); // 5 minutes
+
   console.log("Ready!");
 });
 
