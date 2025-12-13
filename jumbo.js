@@ -104,7 +104,7 @@ async function downloadSupportVideo() {
 
 // When the client is ready, run this code (only once)
 
-client.once("ready", async () => {
+client.once("clientReady", async () => {
   await mongo.deleteAllQueues();
 
   // Delete files starting with --Frag
