@@ -322,24 +322,49 @@ module.exports = {
       if (queryType === "youtube") {
         console.log("Starting YouTube stream with youtube-dl-exec...");
         
-        // Use youtube-dl-exec with settings to prevent fragment files
+        // Use youtube-dl-exec with settings optimized for Discord audio streaming
+        // Format: prefer audio-only formats, fallback to best video+audio
         let options = {
-          format: 'best',
+          format: 'bestaudio[ext=m4a]/bestaudio/best[height<=480]',
           noPlaylist: true,
           noWarnings: true,
           noProgress: true,
-          output: '-',
+          output: '-', // Output to stdout
         };
 
-        // Add seeking if specified
-        if (seek) {
-          options.postprocessorArgs = `-ss ${seek}`;
+        // Add seeking if specified - use postprocessorArgs as array for ffmpeg
+        if (seek && seek > 0) {
+          options.postprocessorArgs = ['-ss', seek.toString()];
           console.log(`Attempting to seek to ${seek} seconds`);
         }
 
         // Use youtube-dl-exec to create stream
+        // Capture stderr to see actual errors for debugging
         const stream = youtubedl.exec(url, options, {
-          stdio: ['ignore', 'pipe', 'ignore']
+          stdio: ['ignore', 'pipe', 'pipe'] // Pipe stderr to see errors
+        });
+
+        // Log stderr for debugging - this will help identify the actual error
+        let stderrData = '';
+        stream.stderr.on('data', (chunk) => {
+          const errorMsg = chunk.toString();
+          stderrData += errorMsg;
+          if (errorMsg.trim()) {
+            console.error('yt-dlp stderr:', errorMsg.trim());
+          }
+        });
+
+        stream.on('error', (error) => {
+          console.error('Stream spawn error:', error);
+        });
+
+        stream.on('close', (code, signal) => {
+          if (code !== 0 && code !== null) {
+            console.error(`yt-dlp process exited with code ${code}, signal: ${signal}`);
+            if (stderrData) {
+              console.error('Full stderr output:', stderrData);
+            }
+          }
         });
 
         resource = createAudioResource(stream.stdout, {
