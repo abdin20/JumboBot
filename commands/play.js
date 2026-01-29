@@ -19,24 +19,20 @@ const {
   getVoiceConnection,
   entersState,
 } = require("@discordjs/voice");
-const { EmbedBuilder } = require("discord.js");
+const { EmbedBuilder, MessageFlags } = require("discord.js");
 const axios = require('axios');
 const ffmpeg = require('ffmpeg-static');
-const { createReadStream, existsSync } = require('node:fs');
-const path = require('path');
-
-// const play = require("play-dl");
-
-// const ytdl = require("@distube/ytdl-core");
-const { PassThrough } = require('stream');
-const { spawn } = require('child_process');
 const youtube = require("youtube-metadata-from-url");
 const searchYoutube = require("youtube-api-v3-search");
 const urlParser = require("js-video-url-parser");
 var mongo = require("../mongodb.js");
 var auth = process.env.GOOGLE_API;
 
-const youtubedl = require('youtube-dl-exec')
+const { InvidiousPlugin } = require("distube-invidious");
+const invidiousPlugin = new InvidiousPlugin({
+  instance: process.env.INVIDIOUS_INSTANCE || null,
+  timeout: 10000,
+});
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -54,20 +50,22 @@ module.exports = {
     if (!interaction.member.voice.channelId) {
       await interaction.reply({
         content: "You need to be in a voice channel!",
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
       return;
     }
+    // Defer immediately so the interaction doesn't expire during parseSearchQuery (3s limit)
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     // get search from user
     const searchQuery = interaction.options.getString("search");
     const { title, url, query, thumbnail, seek } = await this.parseSearchQuery(
       searchQuery
     );
     if (!url) {
-      await interaction.reply({ content: "No results found", ephemeral: true });
+      await interaction.editReply({ content: "No results found" });
       return;
     }
-    await interaction.reply({ content: "Success!", ephemeral: true });
+    await interaction.editReply({ content: "Success!" });
     await interaction.deleteReply();
     // process this info into queue
     await this.processQueue(interaction, title, url, query, thumbnail, {
@@ -321,70 +319,52 @@ module.exports = {
       const player = createAudioPlayer();
 
       if (queryType === "youtube") {
-        console.log("Starting YouTube stream with youtube-dl-exec...");
-        
-        // Use youtube-dl-exec with settings optimized for Discord audio streaming
-        // Format: prefer audio-only formats, fallback to best video+audio
-        // extractorArgs: YouTube often returns 403 with default client; tv/mweb/android tend to work
-        const cookiesPath = path.join(__dirname, '..', 'cookies.txt');
-        let options = {
-          format: 'bestaudio[ext=m4a]/bestaudio/best[height<=480]',
-          noPlaylist: true,
-          noWarnings: true,
-          noProgress: true,
-          output: '-', // Output to stdout
-          // extractorArgs: 'youtube:player_client=tv,mweb,android',
+        console.log("Starting YouTube stream with Invidious...");
+        // Extract video ID (plugin strips ? so we call Invidious API directly by videoId)
+        const videoIdMatch = url && (url.match(/[?&]v=([^&]+)/) || url.match(/youtu\.be\/([^/?]+)/));
+        let videoId = videoIdMatch ? videoIdMatch[1] : null;
+        if (!videoId) {
+          try {
+            const parsed = urlParser.parse(url);
+            videoId = parsed && parsed.id;
+          } catch (_) {}
+        }
+        if (!videoId) {
+          console.error("No video ID in URL:", { url, queryType });
+          throw new Error(`Cannot play: no video ID in URL (${String(url).slice(0, 80)})`);
+        }
+        const instance = invidiousPlugin.instance;
+        // Invidious instances often 403 bot User-Agents; use browser-like headers
+        const invidiousHeaders = {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          Accept: "application/json",
         };
-        // Cookies: use file if present, else --cookies-from-browser (e.g. COOKIES_FROM_BROWSER=firefox)
-        if (existsSync(cookiesPath)) {
-          options.cookies = cookiesPath;
-          console.log('Using cookies file:', cookiesPath);
-        } else if (process.env.COOKIES_FROM_BROWSER) {
-          options.cookiesFromBrowser = process.env.COOKIES_FROM_BROWSER;
-          console.log('Using cookies from browser:', process.env.COOKIES_FROM_BROWSER);
+        const apiRes = await axios.get(`${instance}/api/v1/videos/${videoId}`, {
+          timeout: invidiousPlugin.timeout ?? 10000,
+          headers: invidiousHeaders,
+        });
+        const data = apiRes.data;
+        let streamUrl = null;
+        if (data.adaptiveFormats && data.adaptiveFormats.length > 0) {
+          let bestAudio = data.adaptiveFormats.find((f) => (f.mimeType || f.type || "").includes("audio") && (f.mimeType || f.type || "").includes("opus"));
+          if (!bestAudio) bestAudio = data.adaptiveFormats.find((f) => (f.mimeType || f.type || "").includes("audio") && (f.mimeType || f.type || "").includes("mp4"));
+          if (!bestAudio) bestAudio = data.adaptiveFormats.find((f) => (f.mimeType || f.type || "").includes("audio"));
+          if (bestAudio && bestAudio.url) streamUrl = bestAudio.url;
         }
-
-        // Add seeking if specified - use postprocessorArgs as array for ffmpeg
-        if (seek && seek > 0) {
-          options.postprocessorArgs = ['-ss', seek.toString()];
-          console.log(`Attempting to seek to ${seek} seconds`);
-        }
-
-        // Use youtube-dl-exec to create stream
-        // Capture stderr to see actual errors for debugging
-        const stream = youtubedl.exec(url, options, {
-          stdio: ['ignore', 'pipe', 'pipe'] // Pipe stderr to see errors
+        if (!streamUrl && data.formatStreams && data.formatStreams.length > 0) streamUrl = data.formatStreams[0].url;
+        if (!streamUrl) throw new Error("No playable stream found from Invidious");
+        const response = await axios({
+          method: "get",
+          url: streamUrl,
+          responseType: "stream",
+          headers: { "User-Agent": invidiousHeaders["User-Agent"] },
         });
-
-        // Log stderr for debugging - this will help identify the actual error
-        let stderrData = '';
-        stream.stderr.on('data', (chunk) => {
-          const errorMsg = chunk.toString();
-          stderrData += errorMsg;
-          if (errorMsg.trim()) {
-            console.error('yt-dlp stderr:', errorMsg.trim());
-          }
-        });
-
-        stream.on('error', (error) => {
-          console.error('Stream spawn error:', error);
-        });
-
-        stream.on('close', (code, signal) => {
-          if (code !== 0 && code !== null) {
-            console.error(`yt-dlp process exited with code ${code}, signal: ${signal}`);
-            if (stderrData) {
-              console.error('Full stderr output:', stderrData);
-            }
-          }
-        });
-
-        resource = createAudioResource(stream.stdout, {
+        resource = createAudioResource(response.data, {
           inputType: StreamType.Arbitrary,
-          inlineVolume: true
+          inlineVolume: true,
+          ffmpegExecutable: ffmpeg,
         });
-
-        console.log("youtube-dl-exec resource created successfully" + (seek ? ` with seek to ${seek}s` : ''));
+        console.log("Invidious stream created successfully");
       } else if (queryType === "direct") {
         // Create a stream using ffmpeg for direct file links
         const response = await axios({
