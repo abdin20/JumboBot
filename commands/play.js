@@ -22,7 +22,8 @@ const {
 const { EmbedBuilder } = require("discord.js");
 const axios = require('axios');
 const ffmpeg = require('ffmpeg-static');
-const { createReadStream } = require('node:fs');
+const { createReadStream, existsSync } = require('node:fs');
+const path = require('path');
 
 // const play = require("play-dl");
 
@@ -324,13 +325,24 @@ module.exports = {
         
         // Use youtube-dl-exec with settings optimized for Discord audio streaming
         // Format: prefer audio-only formats, fallback to best video+audio
+        // extractorArgs: YouTube often returns 403 with default client; tv/mweb/android tend to work
+        const cookiesPath = path.join(__dirname, '..', 'cookies.txt');
         let options = {
           format: 'bestaudio[ext=m4a]/bestaudio/best[height<=480]',
           noPlaylist: true,
           noWarnings: true,
           noProgress: true,
           output: '-', // Output to stdout
+          // extractorArgs: 'youtube:player_client=tv,mweb,android',
         };
+        // Cookies: use file if present, else --cookies-from-browser (e.g. COOKIES_FROM_BROWSER=firefox)
+        if (existsSync(cookiesPath)) {
+          options.cookies = cookiesPath;
+          console.log('Using cookies file:', cookiesPath);
+        } else if (process.env.COOKIES_FROM_BROWSER) {
+          options.cookiesFromBrowser = process.env.COOKIES_FROM_BROWSER;
+          console.log('Using cookies from browser:', process.env.COOKIES_FROM_BROWSER);
+        }
 
         // Add seeking if specified - use postprocessorArgs as array for ffmpeg
         if (seek && seek > 0) {
