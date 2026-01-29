@@ -21,7 +21,115 @@ const {
 } = require("@discordjs/voice");
 const { EmbedBuilder, MessageFlags } = require("discord.js");
 const axios = require('axios');
+const https = require('https');
+const http = require('http');
+const { URL } = require('url');
+const { PassThrough, Transform } = require('stream');
 const ffmpeg = require('ffmpeg-static');
+
+// Buffer size so we keep reading from the HTTP socket when ffmpeg consumes slowly.
+// Large buffer (100MB) so we can often finish downloading before CDN resets the connection.
+const STREAM_BUFFER_HWM = 100 * 1024 * 1024; // 100MB
+
+// Native agents: no axios for long-lived streams (avoids Node/axios stream quirks that cause ~40s ECONNRESET)
+const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 6 });
+const httpAgent = new http.Agent({ keepAlive: true, maxSockets: 6 });
+
+function keepStreamAlive(stream) {
+  if (!stream || !stream.socket) return;
+  const socket = stream.socket;
+  socket.setKeepAlive(true, 30000);
+  socket.setTimeout(0);
+}
+
+/**
+ * Buffers the HTTP stream so we keep reading from the socket when the consumer (ffmpeg) is slow.
+ * Prevents googlevideo.com from closing the connection due to "idle" (no reads during backpressure).
+ */
+function bufferStream(httpStream) {
+  const pass = new PassThrough({ highWaterMark: STREAM_BUFFER_HWM });
+  httpStream.on('error', (err) => pass.destroy(err));
+  httpStream.pipe(pass);
+  return pass;
+}
+
+/**
+ * For Invidious/Google CDN: feed a PassThrough with the HTTP stream and on ECONNRESET
+ * (Google closes ~55s) refetch with Range: bytes=received- and pipe the new response.
+ * Returns the PassThrough to pass to createAudioResource.
+ */
+function createResumableStream(url, headers) {
+  const pass = new PassThrough({ highWaterMark: STREAM_BUFFER_HWM });
+  let totalBytesReceived = 0;
+
+  async function pipeNext() {
+    const startOffset = totalBytesReceived;
+    const reqHeaders = startOffset > 0 ? { ...headers, Range: `bytes=${startOffset}-` } : headers;
+    let stream;
+    try {
+      stream = await fetchStream(url, reqHeaders);
+    } catch (err) {
+      pass.destroy(err);
+      return;
+    }
+    const counter = new Transform({
+      transform(chunk, enc, cb) {
+        totalBytesReceived += chunk.length;
+        cb(null, chunk);
+      },
+    });
+    stream.pipe(counter).pipe(pass, { end: false });
+    stream.on('error', async (err) => {
+      if (err.code !== 'ECONNRESET') {
+        pass.destroy(err);
+        return;
+      }
+      counter.unpipe(pass);
+      stream.destroy();
+      counter.destroy();
+      await pipeNext();
+    });
+    stream.on('end', () => {
+      counter.end();
+      pass.end();
+    });
+  }
+  pipeNext();
+  return pass;
+}
+
+/**
+ * Fetch audio stream with Node's native https/http (no axios).
+ * Returns the response stream (IncomingMessage). Accepts 200 and 206 (Range).
+ */
+function fetchStream(url, headers = {}) {
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(url);
+    const isHttps = parsed.protocol === 'https:';
+    const lib = isHttps ? https : http;
+    const opts = {
+      agent: isHttps ? httpsAgent : httpAgent,
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36', ...headers },
+    };
+    const req = lib.get(url, opts, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        req.destroy();
+        const nextUrl = new URL(res.headers.location, url).href;
+        fetchStream(nextUrl, headers).then(resolve).catch(reject);
+        return;
+      }
+      if (res.statusCode !== 200 && res.statusCode !== 206) {
+        req.destroy();
+        reject(new Error(`Stream HTTP ${res.statusCode}`));
+        return;
+      }
+      keepStreamAlive(res);
+      resolve(res);
+    });
+    req.on('error', reject);
+    req.setTimeout(0);
+  });
+}
 const youtube = require("youtube-metadata-from-url");
 const searchYoutube = require("youtube-api-v3-search");
 const urlParser = require("js-video-url-parser");
@@ -293,10 +401,6 @@ module.exports = {
         console.log(err);
       });
 
-      connection.on('stateChange', (oldState, newState) => {
-        console.log(`Connection transitioned from ${oldState.status} to ${newState.status}`);
-      });
-
       //get the song queue
       playingSong = results.songs.shift();
       //shift the queue
@@ -353,28 +457,17 @@ module.exports = {
         }
         if (!streamUrl && data.formatStreams && data.formatStreams.length > 0) streamUrl = data.formatStreams[0].url;
         if (!streamUrl) throw new Error("No playable stream found from Invidious");
-        const response = await axios({
-          method: "get",
-          url: streamUrl,
-          responseType: "stream",
-          headers: { "User-Agent": invidiousHeaders["User-Agent"] },
-        });
-        resource = createAudioResource(response.data, {
+        const stream = createResumableStream(streamUrl, { "User-Agent": invidiousHeaders["User-Agent"] });
+        resource = createAudioResource(stream, {
           inputType: StreamType.Arbitrary,
           inlineVolume: true,
           ffmpegExecutable: ffmpeg,
         });
         console.log("Invidious stream created successfully");
       } else if (queryType === "direct") {
-        // Create a stream using ffmpeg for direct file links
-        const response = await axios({
-          method: 'get',
-          url: url,
-          responseType: 'stream'
-        });
-      
-        // Use ffmpeg to process the stream
-        resource = createAudioResource(response.data, {  inputType: StreamType.Arbitrary,
+        const httpStream = await fetchStream(url, {});
+        const stream = bufferStream(httpStream);
+        resource = createAudioResource(stream, {  inputType: StreamType.Arbitrary,
           inlineVolume: true,
           ffmpegExecutable: ffmpeg
         });
@@ -397,19 +490,7 @@ module.exports = {
         this.playMusic(interaction);
       });
       player.on('error', error => {
-        console.error('Error:', error.message);
-      });
-      resource.playStream.on('error', error => {
-        console.error('Stream Error:', error);
-      });
-
-      // Add these event listeners
-      player.on('stateChange', (oldState, newState) => {
-        console.log(`Player state changed from ${oldState.status} to ${newState.status}`);
-      });
-
-      connection.on('debug', (message) => {
-        console.log('Voice Connection Debug:', message);
+        console.error('Player Error:', error.message);
       });
     } catch (err) {
       console.log("Play.js error catcher: ");
