@@ -22,6 +22,8 @@ const {
 const { EmbedBuilder, MessageFlags } = require("discord.js");
 const https = require('https');
 const http = require('http');
+const fs = require("fs");
+const path = require("path");
 const { URL } = require('url');
 const { PassThrough } = require('stream');
 const ffmpeg = require('ffmpeg-static');
@@ -34,10 +36,16 @@ const MAX_CONCURRENT_YOUTUBE_STREAMS = 5;
 const MAX_YOUTUBE_DURATION_SECONDS = 2 * 60 * 60; // 2 hours
 let activeYoutubeStreams = 0;
 const YOUTUBE_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+const COOKIES_TXT_PATH = path.resolve(__dirname, "..", "cookies.txt");
 const YTDLP_PROFILES = [
+  { name: "age_mixed", extractorArgs: "youtube:player_client=tv_downgraded,web_creator,web", format: "bestaudio/best" },
   { name: "android", extractorArgs: "youtube:player_client=android", format: "bestaudio/best" },
   { name: "ios", extractorArgs: "youtube:player_client=ios", format: "bestaudio/best" },
   { name: "web", extractorArgs: "youtube:player_client=web", format: "bestaudio[ext=m4a]/bestaudio/best" },
+];
+const YTDLP_RUNTIME_CANDIDATES = [
+  { name: "node", args: { jsRuntimes: "node" } },
+  { name: "default", args: {} },
 ];
 
 // Native agents: no axios for long-lived streams (avoids Node/axios stream quirks that cause ~40s ECONNRESET)
@@ -60,7 +68,16 @@ function getFriendlyYouTubeError(err) {
   return null;
 }
 
-function createYoutubeDlBaseArgs(profile) {
+function getYoutubeDlCookieCandidates() {
+  const candidates = [];
+  if (fs.existsSync(COOKIES_TXT_PATH)) {
+    candidates.push({ name: "cookies.txt", args: { cookies: COOKIES_TXT_PATH } });
+  }
+  candidates.push({ name: "no-cookies", args: {} });
+  return candidates;
+}
+
+function createYoutubeDlBaseArgs(profile, extraArgs = {}) {
   return {
     ignoreConfig: true,
     noWarnings: true,
@@ -68,6 +85,7 @@ function createYoutubeDlBaseArgs(profile) {
     extractorArgs: profile.extractorArgs,
     forceIpv4: true,
     userAgent: YOUTUBE_USER_AGENT,
+    ...extraArgs,
   };
 }
 
@@ -91,7 +109,7 @@ function getYoutubeDlFormatCandidates(info, profile) {
   return [...new Set(candidates)].slice(0, 40);
 }
 
-async function pickWorkingFormat(videoUrl, profile, info) {
+async function pickWorkingFormat(videoUrl, profile, info, extraArgs = {}) {
   const formatCandidates = getYoutubeDlFormatCandidates(info, profile);
   let lastErr;
   for (const format of formatCandidates) {
@@ -100,7 +118,7 @@ async function pickWorkingFormat(videoUrl, profile, info) {
         getUrl: true,
         skipDownload: true,
         format,
-        ...createYoutubeDlBaseArgs(profile),
+        ...createYoutubeDlBaseArgs(profile, extraArgs),
       });
       return format;
     } catch (err) {
@@ -112,26 +130,31 @@ async function pickWorkingFormat(videoUrl, profile, info) {
 
 async function getYoutubeDlInfo(videoUrl) {
   let lastErr;
-  for (const profile of YTDLP_PROFILES) {
-    try {
-      const info = await youtubedl(videoUrl, {
-        dumpSingleJson: true,
-        skipDownload: true,
-        ...createYoutubeDlBaseArgs(profile),
-      });
-      return { info, profile };
-    } catch (err) {
-      lastErr = err;
+  const cookieCandidates = getYoutubeDlCookieCandidates();
+  for (const cookieCandidate of cookieCandidates) {
+    for (const runtimeCandidate of YTDLP_RUNTIME_CANDIDATES) {
+      for (const profile of YTDLP_PROFILES) {
+        try {
+          const info = await youtubedl(videoUrl, {
+            dumpSingleJson: true,
+            skipDownload: true,
+            ...createYoutubeDlBaseArgs(profile, { ...cookieCandidate.args, ...runtimeCandidate.args }),
+          });
+          return { info, profile, cookieCandidate, runtimeCandidate };
+        } catch (err) {
+          lastErr = err;
+        }
+      }
     }
   }
   throw lastErr || new Error("yt-dlp failed to fetch video info");
 }
 
-function createYoutubeDlStream(videoUrl, seek = 0, profile = YTDLP_PROFILES[0], format = null) {
+function createYoutubeDlStream(videoUrl, seek = 0, profile = YTDLP_PROFILES[0], format = null, extraArgs = {}) {
   const execArgs = {
     f: format || profile.format,
     o: "-",
-    ...createYoutubeDlBaseArgs(profile),
+    ...createYoutubeDlBaseArgs(profile, extraArgs),
   };
   if (seek > 0) {
     execArgs.downloadSections = [`*${seek}-inf`];
@@ -517,8 +540,9 @@ module.exports = {
 
         releaseYoutubeSlot = acquireYoutubeStreamSlot();
         const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-        const { info, profile } = await getYoutubeDlInfo(videoUrl);
-        const selectedFormat = await pickWorkingFormat(videoUrl, profile, info);
+        const { info, profile, cookieCandidate, runtimeCandidate } = await getYoutubeDlInfo(videoUrl);
+        const ytAttemptArgs = { ...(cookieCandidate?.args || {}), ...(runtimeCandidate?.args || {}) };
+        const selectedFormat = await pickWorkingFormat(videoUrl, profile, info, ytAttemptArgs);
 
         const lengthSeconds = Number(info?.duration ?? info?.videoDetails?.lengthSeconds ?? 0);
         if (Number.isFinite(lengthSeconds) && lengthSeconds > MAX_YOUTUBE_DURATION_SECONDS) {
@@ -527,7 +551,7 @@ module.exports = {
           throw err;
         }
 
-        youtubeDlChild = createYoutubeDlStream(videoUrl, seek, profile, selectedFormat);
+        youtubeDlChild = createYoutubeDlStream(videoUrl, seek, profile, selectedFormat, ytAttemptArgs);
         const stream = youtubeDlChild.stdout;
         let stderrLog = "";
         youtubeDlChild.stderr.on("data", (chunk) => {
@@ -550,7 +574,9 @@ module.exports = {
           inlineVolume: true,
           ffmpegExecutable: ffmpeg,
         });
-        console.log(`YouTube stream created successfully via yt-dlp (${profile.name}, format=${selectedFormat})`);
+        console.log(
+          `YouTube stream created successfully via yt-dlp (${profile.name}, ${cookieCandidate?.name || "no-cookies"}, runtime=${runtimeCandidate?.name || "default"}, format=${selectedFormat})`
+        );
       } else if (queryType === "direct") {
         const httpStream = await fetchStream(url, {});
         const stream = bufferStream(httpStream);
