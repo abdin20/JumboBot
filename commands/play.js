@@ -20,20 +20,127 @@ const {
   entersState,
 } = require("@discordjs/voice");
 const { EmbedBuilder, MessageFlags } = require("discord.js");
-const axios = require('axios');
 const https = require('https');
 const http = require('http');
 const { URL } = require('url');
-const { PassThrough, Transform } = require('stream');
+const { PassThrough } = require('stream');
 const ffmpeg = require('ffmpeg-static');
+const youtubedl = require("youtube-dl-exec");
 
 // Buffer size so we keep reading from the HTTP socket when ffmpeg consumes slowly.
 // Large buffer (100MB) so we can often finish downloading before CDN resets the connection.
 const STREAM_BUFFER_HWM = 100 * 1024 * 1024; // 100MB
+const MAX_CONCURRENT_YOUTUBE_STREAMS = 5;
+const MAX_YOUTUBE_DURATION_SECONDS = 2 * 60 * 60; // 2 hours
+let activeYoutubeStreams = 0;
+const YOUTUBE_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+const YTDLP_PROFILES = [
+  { name: "android", extractorArgs: "youtube:player_client=android", format: "bestaudio/best" },
+  { name: "ios", extractorArgs: "youtube:player_client=ios", format: "bestaudio/best" },
+  { name: "web", extractorArgs: "youtube:player_client=web", format: "bestaudio[ext=m4a]/bestaudio/best" },
+];
 
 // Native agents: no axios for long-lived streams (avoids Node/axios stream quirks that cause ~40s ECONNRESET)
 const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 6 });
 const httpAgent = new http.Agent({ keepAlive: true, maxSockets: 6 });
+
+function getFriendlyYouTubeError(err) {
+  const stderr = String(err?.stderr || "");
+  const msg = String(err?.message || "");
+  const combined = `${stderr}\n${msg}`.toLowerCase();
+  if (combined.includes("sign in to confirm your age")) {
+    return "This video is age-restricted and cannot be played with the current yt-dlp extractor profile.";
+  }
+  if (combined.includes("http error 403") || combined.includes("forbidden")) {
+    return "YouTube blocked this stream request (403). Try another video.";
+  }
+  if (combined.includes("requested format is not available")) {
+    return "No playable format was available for this video with current extractor profiles.";
+  }
+  return null;
+}
+
+function createYoutubeDlBaseArgs(profile) {
+  return {
+    ignoreConfig: true,
+    noWarnings: true,
+    noCheckCertificates: true,
+    extractorArgs: profile.extractorArgs,
+    forceIpv4: true,
+    userAgent: YOUTUBE_USER_AGENT,
+  };
+}
+
+function getYoutubeDlFormatCandidates(info, profile) {
+  const candidates = [profile.format, "bestaudio/best", "bestaudio", "best"];
+  const formats = Array.isArray(info?.formats) ? info.formats : [];
+  const audioOnly = [];
+  const muxed = [];
+  for (const fmt of formats) {
+    const id = String(fmt?.format_id || "").trim();
+    if (!id) continue;
+    const acodec = String(fmt?.acodec || "");
+    const vcodec = String(fmt?.vcodec || "");
+    const hasAudio = acodec && acodec !== "none";
+    const hasVideo = vcodec && vcodec !== "none";
+    if (!hasAudio) continue;
+    if (!hasVideo) audioOnly.push(id);
+    else muxed.push(id);
+  }
+  candidates.push(...audioOnly, ...muxed);
+  return [...new Set(candidates)].slice(0, 40);
+}
+
+async function pickWorkingFormat(videoUrl, profile, info) {
+  const formatCandidates = getYoutubeDlFormatCandidates(info, profile);
+  let lastErr;
+  for (const format of formatCandidates) {
+    try {
+      await youtubedl(videoUrl, {
+        getUrl: true,
+        skipDownload: true,
+        format,
+        ...createYoutubeDlBaseArgs(profile),
+      });
+      return format;
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr || new Error("No working format candidate found for this video");
+}
+
+async function getYoutubeDlInfo(videoUrl) {
+  let lastErr;
+  for (const profile of YTDLP_PROFILES) {
+    try {
+      const info = await youtubedl(videoUrl, {
+        dumpSingleJson: true,
+        skipDownload: true,
+        ...createYoutubeDlBaseArgs(profile),
+      });
+      return { info, profile };
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr || new Error("yt-dlp failed to fetch video info");
+}
+
+function createYoutubeDlStream(videoUrl, seek = 0, profile = YTDLP_PROFILES[0], format = null) {
+  const execArgs = {
+    f: format || profile.format,
+    o: "-",
+    ...createYoutubeDlBaseArgs(profile),
+  };
+  if (seek > 0) {
+    execArgs.downloadSections = [`*${seek}-inf`];
+    execArgs.forceKeyframesAtCuts = true;
+  }
+  const child = youtubedl.exec(videoUrl, execArgs, { stdio: ["ignore", "pipe", "pipe"] });
+  if (typeof child.catch === "function") child.catch(() => {});
+  return child;
+}
 
 function keepStreamAlive(stream) {
   if (!stream || !stream.socket) return;
@@ -54,51 +161,6 @@ function bufferStream(httpStream) {
 }
 
 /**
- * For Invidious/Google CDN: feed a PassThrough with the HTTP stream and on ECONNRESET
- * (Google closes ~55s) refetch with Range: bytes=received- and pipe the new response.
- * Returns the PassThrough to pass to createAudioResource.
- */
-function createResumableStream(url, headers) {
-  const pass = new PassThrough({ highWaterMark: STREAM_BUFFER_HWM });
-  let totalBytesReceived = 0;
-
-  async function pipeNext() {
-    const startOffset = totalBytesReceived;
-    const reqHeaders = startOffset > 0 ? { ...headers, Range: `bytes=${startOffset}-` } : headers;
-    let stream;
-    try {
-      stream = await fetchStream(url, reqHeaders);
-    } catch (err) {
-      pass.destroy(err);
-      return;
-    }
-    const counter = new Transform({
-      transform(chunk, enc, cb) {
-        totalBytesReceived += chunk.length;
-        cb(null, chunk);
-      },
-    });
-    stream.pipe(counter).pipe(pass, { end: false });
-    stream.on('error', async (err) => {
-      if (err.code !== 'ECONNRESET') {
-        pass.destroy(err);
-        return;
-      }
-      counter.unpipe(pass);
-      stream.destroy();
-      counter.destroy();
-      await pipeNext();
-    });
-    stream.on('end', () => {
-      counter.end();
-      pass.end();
-    });
-  }
-  pipeNext();
-  return pass;
-}
-
-/**
  * Fetch audio stream with Node's native https/http (no axios).
  * Returns the response stream (IncomingMessage). Accepts 200 and 206 (Range).
  */
@@ -109,7 +171,7 @@ function fetchStream(url, headers = {}) {
     const lib = isHttps ? https : http;
     const opts = {
       agent: isHttps ? httpsAgent : httpAgent,
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36', ...headers },
+      headers: { "User-Agent": YOUTUBE_USER_AGENT, ...headers },
     };
     const req = lib.get(url, opts, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
@@ -136,11 +198,32 @@ const urlParser = require("js-video-url-parser");
 var mongo = require("../mongodb.js");
 var auth = process.env.GOOGLE_API;
 
-const { InvidiousPlugin } = require("distube-invidious");
-const invidiousPlugin = new InvidiousPlugin({
-  instance: process.env.INVIDIOUS_INSTANCE || null,
-  timeout: 10000,
-});
+function acquireYoutubeStreamSlot() {
+  if (activeYoutubeStreams >= MAX_CONCURRENT_YOUTUBE_STREAMS) {
+    const err = new Error(`Maximum concurrent YouTube streams reached (${MAX_CONCURRENT_YOUTUBE_STREAMS})`);
+    err.code = "YOUTUBE_CONCURRENCY_LIMIT";
+    throw err;
+  }
+  activeYoutubeStreams += 1;
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    activeYoutubeStreams = Math.max(0, activeYoutubeStreams - 1);
+  };
+}
+
+function extractYouTubeVideoId(url) {
+  const videoIdMatch = url && (url.match(/[?&]v=([^&]+)/) || url.match(/youtu\.be\/([^/?]+)/));
+  let videoId = videoIdMatch ? videoIdMatch[1] : null;
+  if (!videoId) {
+    try {
+      const parsed = urlParser.parse(url);
+      videoId = parsed && parsed.id;
+    } catch (_) {}
+  }
+  return videoId;
+}
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -346,6 +429,8 @@ module.exports = {
     }
   },
   async playMusic(interaction, seek = null) {
+    let releaseYoutubeSlot = null;
+    let youtubeDlChild = null;
     try {
       const exampleEmbed = new EmbedBuilder()
         .setColor("#0099ff")
@@ -423,47 +508,49 @@ module.exports = {
       const player = createAudioPlayer();
 
       if (queryType === "youtube") {
-        console.log("Starting YouTube stream with Invidious...");
-        // Extract video ID (plugin strips ? so we call Invidious API directly by videoId)
-        const videoIdMatch = url && (url.match(/[?&]v=([^&]+)/) || url.match(/youtu\.be\/([^/?]+)/));
-        let videoId = videoIdMatch ? videoIdMatch[1] : null;
-        if (!videoId) {
-          try {
-            const parsed = urlParser.parse(url);
-            videoId = parsed && parsed.id;
-          } catch (_) {}
-        }
+        console.log("Starting YouTube stream with yt-dlp...");
+        const videoId = extractYouTubeVideoId(url);
         if (!videoId) {
           console.error("No video ID in URL:", { url, queryType });
           throw new Error(`Cannot play: no video ID in URL (${String(url).slice(0, 80)})`);
         }
-        const instance = invidiousPlugin.instance;
-        // Invidious instances often 403 bot User-Agents; use browser-like headers
-        const invidiousHeaders = {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          Accept: "application/json",
-        };
-        const apiRes = await axios.get(`${instance}/api/v1/videos/${videoId}`, {
-          timeout: invidiousPlugin.timeout ?? 10000,
-          headers: invidiousHeaders,
-        });
-        const data = apiRes.data;
-        let streamUrl = null;
-        if (data.adaptiveFormats && data.adaptiveFormats.length > 0) {
-          let bestAudio = data.adaptiveFormats.find((f) => (f.mimeType || f.type || "").includes("audio") && (f.mimeType || f.type || "").includes("opus"));
-          if (!bestAudio) bestAudio = data.adaptiveFormats.find((f) => (f.mimeType || f.type || "").includes("audio") && (f.mimeType || f.type || "").includes("mp4"));
-          if (!bestAudio) bestAudio = data.adaptiveFormats.find((f) => (f.mimeType || f.type || "").includes("audio"));
-          if (bestAudio && bestAudio.url) streamUrl = bestAudio.url;
+
+        releaseYoutubeSlot = acquireYoutubeStreamSlot();
+        const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+        const { info, profile } = await getYoutubeDlInfo(videoUrl);
+        const selectedFormat = await pickWorkingFormat(videoUrl, profile, info);
+
+        const lengthSeconds = Number(info?.duration ?? info?.videoDetails?.lengthSeconds ?? 0);
+        if (Number.isFinite(lengthSeconds) && lengthSeconds > MAX_YOUTUBE_DURATION_SECONDS) {
+          const err = new Error(`Video is too long (${Math.floor(lengthSeconds / 60)} minutes). Max allowed is 120 minutes.`);
+          err.code = "YOUTUBE_DURATION_LIMIT";
+          throw err;
         }
-        if (!streamUrl && data.formatStreams && data.formatStreams.length > 0) streamUrl = data.formatStreams[0].url;
-        if (!streamUrl) throw new Error("No playable stream found from Invidious");
-        const stream = createResumableStream(streamUrl, { "User-Agent": invidiousHeaders["User-Agent"] });
+
+        youtubeDlChild = createYoutubeDlStream(videoUrl, seek, profile, selectedFormat);
+        const stream = youtubeDlChild.stdout;
+        let stderrLog = "";
+        youtubeDlChild.stderr.on("data", (chunk) => {
+          stderrLog += String(chunk);
+          if (stderrLog.length > 4000) stderrLog = stderrLog.slice(-4000);
+        });
+
+        const releaseOnce = () => releaseYoutubeSlot?.();
+        stream.once("end", releaseOnce);
+        stream.once("error", releaseOnce);
+        stream.once("close", releaseOnce);
+        youtubeDlChild.once("close", (code) => {
+          if (code && code !== 0 && code !== 143) {
+            console.log("yt-dlp exited with code", code, stderrLog || "");
+          }
+        });
+
         resource = createAudioResource(stream, {
           inputType: StreamType.Arbitrary,
           inlineVolume: true,
           ffmpegExecutable: ffmpeg,
         });
-        console.log("Invidious stream created successfully");
+        console.log(`YouTube stream created successfully via yt-dlp (${profile.name}, format=${selectedFormat})`);
       } else if (queryType === "direct") {
         const httpStream = await fetchStream(url, {});
         const stream = bufferStream(httpStream);
@@ -477,6 +564,8 @@ module.exports = {
       connection.subscribe(player);
 
       player.once(AudioPlayerStatus.Idle, async () => {
+        releaseYoutubeSlot?.();
+        youtubeDlChild?.kill("SIGTERM");
         const results = await mongo.findQueueByGuildId(interaction.guildId);
         if (!results?.songs) return;
         if (!results.loop) {
@@ -490,11 +579,21 @@ module.exports = {
         this.playMusic(interaction);
       });
       player.on('error', error => {
+        releaseYoutubeSlot?.();
+        youtubeDlChild?.kill("SIGTERM");
         console.error('Player Error:', error.message);
       });
     } catch (err) {
+      releaseYoutubeSlot?.();
+      youtubeDlChild?.kill("SIGTERM");
       console.log("Play.js error catcher: ");
       console.log(err);
+      const friendlyYoutubeError = getFriendlyYouTubeError(err);
+      if (friendlyYoutubeError) {
+        interaction.channel?.send({ content: `Cannot play this track: ${friendlyYoutubeError}` }).catch(() => {});
+      } else if (err?.code === "YOUTUBE_DURATION_LIMIT" || err?.code === "YOUTUBE_CONCURRENCY_LIMIT") {
+        interaction.channel?.send({ content: `Cannot play this track: ${err.message}` }).catch(() => {});
+      }
       
       const nextresults = await mongo.findQueueByGuildId(interaction.guildId);
       if (nextresults) {
