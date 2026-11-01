@@ -109,23 +109,11 @@ function getYoutubeDlFormatCandidates(info, profile) {
   return [...new Set(candidates)].slice(0, 40);
 }
 
-async function pickWorkingFormat(videoUrl, profile, info, extraArgs = {}) {
-  const formatCandidates = getYoutubeDlFormatCandidates(info, profile);
-  let lastErr;
-  for (const format of formatCandidates) {
-    try {
-      await youtubedl(videoUrl, {
-        getUrl: true,
-        skipDownload: true,
-        format,
-        ...createYoutubeDlBaseArgs(profile, extraArgs),
-      });
-      return format;
-    } catch (err) {
-      lastErr = err;
-    }
-  }
-  throw lastErr || new Error("No working format candidate found for this video");
+// Picks a format straight from the info we already fetched in getYoutubeDlInfo(),
+// instead of spending a second yt-dlp round trip to "pre-validate" a candidate
+// (the previous pickWorkingFormat()) before even starting the actual stream.
+function selectFormat(info, profile) {
+  return getYoutubeDlFormatCandidates(info, profile)[0];
 }
 
 async function getYoutubeDlInfo(videoUrl) {
@@ -642,7 +630,7 @@ module.exports = {
         const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
         const { info, profile, cookieCandidate, runtimeCandidate } = await getYoutubeDlInfo(videoUrl);
         const ytAttemptArgs = { ...(cookieCandidate?.args || {}), ...(runtimeCandidate?.args || {}) };
-        const selectedFormat = await pickWorkingFormat(videoUrl, profile, info, ytAttemptArgs);
+        const selectedFormat = selectFormat(info, profile);
 
         const lengthSeconds = Number(info?.duration ?? info?.videoDetails?.lengthSeconds ?? 0);
         if (Number.isFinite(lengthSeconds) && lengthSeconds > MAX_YOUTUBE_DURATION_SECONDS) {
