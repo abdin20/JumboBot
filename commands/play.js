@@ -218,8 +218,56 @@ function fetchStream(url, headers = {}) {
 const youtube = require("youtube-metadata-from-url");
 const searchYoutube = require("youtube-api-v3-search");
 const urlParser = require("js-video-url-parser");
+const { getPreview: getSpotifyPreview } = require("spotify-url-info")(fetch);
 var mongo = require("../mongodb.js");
 var auth = process.env.GOOGLE_API;
+
+function getHostname(url) {
+  try {
+    return new URL(url).hostname.toLowerCase();
+  } catch (_) {
+    return "";
+  }
+}
+
+function isSpotifyUrl(url) {
+  return /spotify\.com$/.test(getHostname(url));
+}
+
+function isSoundCloudUrl(url) {
+  return /soundcloud\.com$/.test(getHostname(url));
+}
+
+// Only single-track links are supported; albums/playlists/artists/user profiles fall through to "no results"
+function isSpotifyTrackUrl(url) {
+  try {
+    const segments = new URL(url).pathname.split("/").filter(Boolean);
+    return segments[segments.length - 2] === "track";
+  } catch (_) {
+    return false;
+  }
+}
+
+// A SoundCloud track URL is "/user/track-slug" (2 segments); sets ("/user/sets/x") and
+// user profiles ("/user") have a different depth
+function isSoundCloudTrackUrl(url) {
+  try {
+    const segments = new URL(url).pathname.split("/").filter(Boolean);
+    return segments.length === 2;
+  } catch (_) {
+    return false;
+  }
+}
+
+async function getSoundCloudTitle(url) {
+  const oembedUrl = `https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(url)}`;
+  const res = await fetch(oembedUrl);
+  if (!res.ok) {
+    throw new Error(`SoundCloud oEmbed HTTP ${res.status}`);
+  }
+  const data = await res.json();
+  return data.title;
+}
 
 function acquireYoutubeStreamSlot() {
   if (activeYoutubeStreams >= MAX_CONCURRENT_YOUTUBE_STREAMS) {
@@ -251,11 +299,11 @@ function extractYouTubeVideoId(url) {
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("play")
-    .setDescription("Searches YouTube for a song and plays it")
+    .setDescription("Searches YouTube for a song and plays it (also accepts Spotify/SoundCloud track links)")
     .addStringOption((option) =>
       option
         .setName("search")
-        .setDescription("Search term for music")
+        .setDescription("Search term, YouTube link, or Spotify/SoundCloud track link")
         .setRequired(true)
     ),
 
@@ -293,6 +341,13 @@ module.exports = {
     if (searchQuery.indexOf("http") < 0) {
       return null;
     }
+    // spotify/soundcloud aren't recognized by js-video-url-parser, so check hostname first
+    if (isSpotifyUrl(searchQuery)) {
+      return "spotify";
+    }
+    if (isSoundCloudUrl(searchQuery)) {
+      return "soundcloud";
+    }
     // guaranteed link
     const urlType = urlParser.parse(searchQuery);
     // if cannot parse the link it must be a direct link
@@ -328,6 +383,51 @@ module.exports = {
         title = searchQuery;
         url = searchQuery;
         query = "direct";
+        break;
+
+      // spotify track link -> pull title/artist, then search youtube for it
+      // (albums/playlists/artists are not supported and fall through to "no results")
+      case "spotify":
+        if (isSpotifyTrackUrl(searchQuery)) {
+          let spotifyQuery = null;
+          try {
+            const preview = await getSpotifyPreview(searchQuery);
+            if (preview?.artist && preview?.track) {
+              spotifyQuery = `${preview.artist} - ${preview.track}`;
+            } else if (preview?.title) {
+              spotifyQuery = preview.title;
+            }
+          } catch (err) {
+            console.error("Spotify metadata lookup failed:", err.message);
+          }
+          if (spotifyQuery) {
+            youtubeResult = await this.getYoutubeInfo(spotifyQuery);
+            url = youtubeResult?.url;
+            title = youtubeResult?.title;
+            thumbnail = youtubeResult?.thumbnail;
+            query = "youtube";
+          }
+        }
+        break;
+
+      // soundcloud track link -> pull title, then search youtube for it
+      // (sets/playlists/user profiles are not supported and fall through to "no results")
+      case "soundcloud":
+        if (isSoundCloudTrackUrl(searchQuery)) {
+          let soundcloudQuery = null;
+          try {
+            soundcloudQuery = await getSoundCloudTitle(searchQuery);
+          } catch (err) {
+            console.error("SoundCloud metadata lookup failed:", err.message);
+          }
+          if (soundcloudQuery) {
+            youtubeResult = await this.getYoutubeInfo(soundcloudQuery);
+            url = youtubeResult?.url;
+            title = youtubeResult?.title;
+            thumbnail = youtubeResult?.thumbnail;
+            query = "youtube";
+          }
+        }
         break;
 
       // defaults to searching youtube
