@@ -461,9 +461,15 @@ client.on("voiceStateUpdate", async (oldState, newState) => {
   // });
   let newplayer = createAudioPlayer();
 
+  // A user's custom list may be empty (e.g. dead links removed) -> fall back to a random clip
+  let soundUrl = getRandomSoundEffect(newState.member.id, newState.member.user.username);
+  if (!soundUrl) {
+    soundUrl = actualClips[Math.floor(Math.random() * actualClips.length)].link;
+  }
+
   const response = await axios({
     method: 'get',
-    url: getRandomSoundEffect(newState.member.id, newState.member.user.username),
+    url: soundUrl,
     responseType: 'stream'
   });
 

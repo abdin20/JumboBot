@@ -85,8 +85,15 @@ module.exports = {
         }
 
         try {
-            const response = await axios.get(`https://horoscope-app-api.vercel.app/api/v1/get-horoscope/daily?sign=${zodiacSign}&day=today`);
-            const horoscope = response.data;
+            const response = await axios.get('https://freehoroscopeapi.com/api/v1/get-horoscope/daily', {
+                params: { sign: zodiacSign, day: 'today' },
+                timeout: 10000,
+            });
+            const data = response.data?.data ?? {};
+            const horoscopeText = data.horoscope ?? data.horoscope_data;
+            if (!horoscopeText) {
+                throw new Error(`Unexpected API response: ${JSON.stringify(response.data)}`);
+            }
 
             const signEmojis = {
                 aries: '♈', taurus: '♉', gemini: '♊', cancer: '♋',
@@ -98,8 +105,8 @@ module.exports = {
                 .setColor('#FF69B4')
                 .setTitle(`${signEmojis[zodiacSign]} Daily Horoscope for ${zodiacSign.charAt(0).toUpperCase() + zodiacSign.slice(1)}`)
                 .addFields(
-                    { name: 'Today\'s Horoscope', value: horoscope.data.horoscope_data },
-                    { name: 'Date', value: horoscope.data.date, inline: true },
+                    { name: 'Today\'s Horoscope', value: horoscopeText.slice(0, 1024) },
+                    { name: 'Date', value: String(data.date ?? new Date().toISOString().slice(0, 10)), inline: true },
                     { name: 'Sign', value: zodiacSign.charAt(0).toUpperCase() + zodiacSign.slice(1), inline: true }
                 )
                 .setAuthor({
