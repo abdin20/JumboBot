@@ -244,7 +244,7 @@ const getRandomSoundEffect = (playerId, userName) => {
     console.log("playing custom user song");
     // nic
     if (playerId === "181589300754907137") {
-      let playerSongs = ["https://lobfile.com/file/JFQMW62C.mp3"];
+      let playerSongs = [];
       const playerSongRand = Math.floor(Math.random() * playerSongs.length);
       return playerSongs[playerSongRand];
     }
@@ -256,27 +256,25 @@ const getRandomSoundEffect = (playerId, userName) => {
     }
     //jared
     if (playerId === "152559250806145025") {
-      let playerSongs = ["https://lobfile.com/file/z2zBFFuZ.mp3"];
+      let playerSongs = [];
       const playerSongRand = Math.floor(Math.random() * playerSongs.length);
       return playerSongs[playerSongRand];
     }
     // jav
     if (playerId === "166703160876990464") {
-      let playerSongs = ["https://lobfile.com/file/DoObMy9g.mp3"];
+      let playerSongs = [];
       const playerSongRand = Math.floor(Math.random() * playerSongs.length);
       return playerSongs[playerSongRand];
     }
     // shane
     if (playerId === "545042126644445184") {
-      let playerSongs = ["https://lobfile.com/file/0qDy.mp3"];
+      let playerSongs = [];
       const playerSongRand = Math.floor(Math.random() * playerSongs.length);
       return playerSongs[playerSongRand];
     }
     //connor
     if (playerId === "144260548245061632") {
       let playerSongs = [
-        "https://lobfile.com/file/eSQe.mp3",
-        "https://lobfile.com/file/WxhT.mp3",
         // 'https://lobfile.com/file/xyK2GJCD.mp3'
       ];
       const playerSongRand = Math.floor(Math.random() * playerSongs.length);
@@ -284,17 +282,12 @@ const getRandomSoundEffect = (playerId, userName) => {
     } //aaron
     if (playerId === "146425358927790081") {
       let playerSongs = [
-        "https://lobfile.com/file/RWM9.mp3",
-        "https://lobfile.com/file/DnEe.mp3",
       ];
       const playerSongRand = Math.floor(Math.random() * playerSongs.length);
       return playerSongs[playerSongRand];
     } //shane chen
     if (playerId === "116672531661979652") {
       let playerSongs = [
-        "https://lobfile.com/file/IYrZ.mp3",
-        " https://lobfile.com/file/id9H.wav",
-        "https://lobfile.com/file/1AkZ.mp3",
       ];
       const playerSongRand = Math.floor(Math.random() * playerSongs.length);
       return playerSongs[playerSongRand];
@@ -302,8 +295,6 @@ const getRandomSoundEffect = (playerId, userName) => {
     if (playerId === "313780633518473218") {
       let playerSongs = [
         // "https://lobfile.com/file/XxEz8aNg.mp3", carrie saying carrie
-        "https://lobfile.com/file/1SDy.mp3",
-        "https://lobfile.com/file/dWiB.mp3",
         "https://lithi.io/file/AfSSNVKW.mp3",
         'https://lithi.io/file/6km6RB6Q.mp3',
       ];
@@ -313,7 +304,6 @@ const getRandomSoundEffect = (playerId, userName) => {
     } //noah
     if (playerId === "331589423546368001") {
       let playerSongs = [
-        "https://lobfile.com/file/eSQe.mp3",
         "https://lithi.io/file/27dtuve9.mp3"
       ];
       const playerSongRand = Math.floor(Math.random() * playerSongs.length);
@@ -406,7 +396,12 @@ const getRandomSoundEffect = (playerId, userName) => {
   return actualClips[rand].link;
 };
 
+// Join sound effects are sunset for now. Flip to true to re-enable.
+const JOIN_SOUNDS_ENABLED = false;
+
 client.on("voiceStateUpdate", async (oldState, newState) => {
+  if (!JOIN_SOUNDS_ENABLED) return;
+
   // dont do anything if its a bot
   if (oldState.member.user.bot || newState.member.user.bot) {
     return;
