@@ -144,6 +144,30 @@ exports.updateQueueByGuildId = async function updateQueueByGuildId(guildId, prop
     // console.log("updated queue for " + guildId);
 }
 
+//atomically add a song to the queue instead of a read-modify-write of the whole array;
+//position null appends, position 1 inserts right after the currently playing song
+exports.pushSongToQueue = async function pushSongToQueue(guildId, songObject, position = null) {
+    const pushSpec = position === null
+        ? { songs: songObject }
+        : { songs: { $each: [songObject], $position: position } };
+    result = await mongodClient.db("userData").collection("dumboMusic")
+        .updateOne({ guildId: guildId }, { $push: pushSpec });
+}
+
+//atomically remove the currently playing (front) song from the queue
+exports.popFrontSongFromQueue = async function popFrontSongFromQueue(guildId) {
+    result = await mongodClient.db("userData").collection("dumboMusic")
+        .updateOne({ guildId: guildId }, { $pop: { songs: -1 } });
+}
+
+//atomically delete the queue only if it's still empty, closing the gap between checking
+//"is it empty" and deleting it (a song added in between would otherwise get discarded)
+exports.deleteQueueIfEmpty = async function deleteQueueIfEmpty(guildId) {
+    const result = await mongodClient.db("userData").collection("dumboMusic")
+        .findOneAndDelete({ guildId: guildId, $or: [{ songs: { $size: 0 } }, { songs: { $exists: false } }] });
+    return result?.value ?? null;
+}
+
 //find queue
 //find game from database based on type and discord id
 exports.findQueueByGuildId = async function findQueueByGuildId(guildId) {

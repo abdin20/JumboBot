@@ -74,9 +74,15 @@ function getFriendlyYouTubeError(err) {
   return null;
 }
 
+// Cached after the first check -- cookies.txt's presence is a deploy-time concern, not
+// something that changes mid-run, so there's no need to hit the filesystem on every call.
+let cookiesTxtExists = null;
 function getYoutubeDlCookieCandidates() {
+  if (cookiesTxtExists === null) {
+    cookiesTxtExists = fs.existsSync(COOKIES_TXT_PATH);
+  }
   const candidates = [];
-  if (fs.existsSync(COOKIES_TXT_PATH)) {
+  if (cookiesTxtExists) {
     candidates.push({ name: "cookies.txt", args: { cookies: COOKIES_TXT_PATH } });
   }
   candidates.push({ name: "no-cookies", args: {} });
@@ -95,31 +101,11 @@ function createYoutubeDlBaseArgs(profile, extraArgs = {}) {
   };
 }
 
-function getYoutubeDlFormatCandidates(info, profile) {
-  const candidates = [profile.format, "bestaudio/best", "bestaudio", "best"];
-  const formats = Array.isArray(info?.formats) ? info.formats : [];
-  const audioOnly = [];
-  const muxed = [];
-  for (const fmt of formats) {
-    const id = String(fmt?.format_id || "").trim();
-    if (!id) continue;
-    const acodec = String(fmt?.acodec || "");
-    const vcodec = String(fmt?.vcodec || "");
-    const hasAudio = acodec && acodec !== "none";
-    const hasVideo = vcodec && vcodec !== "none";
-    if (!hasAudio) continue;
-    if (!hasVideo) audioOnly.push(id);
-    else muxed.push(id);
-  }
-  candidates.push(...audioOnly, ...muxed);
-  return [...new Set(candidates)].slice(0, 40);
-}
-
-// Picks a format straight from the info we already fetched in getYoutubeDlInfo(),
-// instead of spending a second yt-dlp round trip to "pre-validate" a candidate
-// (the previous pickWorkingFormat()) before even starting the actual stream.
-function selectFormat(info, profile) {
-  return getYoutubeDlFormatCandidates(info, profile)[0];
+// Always resolves to the profile's own generic yt-dlp selector (e.g. "bestaudio/best") --
+// yt-dlp negotiates the concrete format itself at stream time, so there's nothing useful
+// to compute from info.formats here (it was previously built and then never used).
+function selectFormat(profile) {
+  return profile.format;
 }
 
 async function getYoutubeDlInfo(videoUrl) {
@@ -566,26 +552,16 @@ module.exports = {
       //go to playmusic function
       await this.playMusic(interaction);
     } else if (results.songs.length == 0) {
-      //if queue is empty
-
-      //get song queue and add the new song
-      addSong = results.songs;
-      addSong.push(songObject);
-
-      //push it to db
+      //if queue is empty, atomically append the new song
       console.log(`Updating queue for ${interaction.guild.name}`);
-      await mongo.updateQueueByGuildId(interaction.guildId, { songs: addSong });
+      await mongo.pushSongToQueue(interaction.guildId, songObject);
 
       await this.playMusic(interaction); //run the play loop once more
     } else {
-      //if the queue exists then we add it to queue
-
-      addSong = results.songs;
-      songParams?.priority
-        ? addSong.splice(1, 0, songObject)
-        : addSong.push(songObject);
+      //if the queue exists then atomically add to it (priority songs go right after the
+      //currently playing one, at index 1)
       console.log(`Updating queue for ${interaction.guild.name}`);
-      await mongo.updateQueueByGuildId(interaction.guildId, { songs: addSong });
+      await mongo.pushSongToQueue(interaction.guildId, songObject, songParams?.priority ? 1 : null);
     }
   },
   async playMusic(interaction, seek = null) {
@@ -605,15 +581,17 @@ module.exports = {
         });
 
       const results = await mongo.findQueueByGuildId(interaction.guildId);
-      //delete the queue if the size is 0
-      if (!results || (results && results.songs.length === 0)) {
-        const newresults = await mongo.findQueueByGuildId(interaction.guildId);
-        if (newresults) {
-          console.log(`Deleting queue for ${interaction.guild.name}`);
-          await mongo.deleteQueueByObject(newresults);
+      //delete the queue if the size is 0 -- atomic so a song added in the gap between this
+      //check and the delete isn't silently discarded along with it
+      if (!results || results.songs.length === 0) {
+        const deletedQueue = await mongo.deleteQueueIfEmpty(interaction.guildId);
+        if (!deletedQueue) {
+          //a song was added between the read above and the delete attempt -- play it instead
+          return this.playMusic(interaction);
         }
-        let checkConnection = getVoiceConnection(interaction.guildId);
-        checkConnection.disconnect();
+        console.log(`Deleting queue for ${interaction.guild.name}`);
+        const checkConnection = getVoiceConnection(interaction.guildId);
+        checkConnection?.disconnect();
         return;
       }
 
@@ -693,9 +671,9 @@ module.exports = {
         }
 
         if (!usedCombo) {
-          const { info, profile, cookieCandidate, runtimeCandidate } = await getYoutubeDlInfo(videoUrl);
+          const { profile, cookieCandidate, runtimeCandidate } = await getYoutubeDlInfo(videoUrl);
           const ytAttemptArgs = { ...(cookieCandidate?.args || {}), ...(runtimeCandidate?.args || {}) };
-          const selectedFormat = selectFormat(info, profile);
+          const selectedFormat = selectFormat(profile);
           youtubeDlChild = createYoutubeDlStream(videoUrl, seek, profile, selectedFormat, ytAttemptArgs);
           stream = youtubeDlChild.stdout;
           usedCombo = { profile, cookieCandidate, runtimeCandidate };
@@ -753,12 +731,8 @@ module.exports = {
         const results = await mongo.findQueueByGuildId(interaction.guildId);
         if (!results?.songs) return;
         if (!results.loop) {
-          songs = results.songs;
-          songs.shift();
           console.log(`Updating queue for ${interaction.guild.name}`);
-          await mongo.updateQueueByGuildId(interaction.guildId, {
-            songs: songs,
-          });
+          await mongo.popFrontSongFromQueue(interaction.guildId);
         }
         this.playMusic(interaction);
       });
