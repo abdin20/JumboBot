@@ -724,10 +724,32 @@ module.exports = {
         }, MAX_YOUTUBE_DURATION_SECONDS * 1000);
       }
 
-      player.once(AudioPlayerStatus.Idle, async () => {
+      // When the voice connection goes away (/stop, kicked, etc.) the player has no
+      // subscribers and just auto-pauses -- it never reaches Idle. Tear down this track's
+      // resources here so the duration-cap timer doesn't fire hours later and yt-dlp
+      // doesn't keep running / holding a stream slot.
+      let disconnectedFromVoice = false;
+      const onConnectionStateChange = (_old, newState) => {
+        if (
+          newState.status !== VoiceConnectionStatus.Disconnected &&
+          newState.status !== VoiceConnectionStatus.Destroyed
+        ) return;
+        disconnectedFromVoice = true;
+        connection.off("stateChange", onConnectionStateChange);
         clearTimeout(durationCapTimer);
         releaseYoutubeSlot?.();
         youtubeDlChild?.kill("SIGTERM");
+        player.stop(true);
+      };
+      connection.on("stateChange", onConnectionStateChange);
+
+      player.once(AudioPlayerStatus.Idle, async () => {
+        connection.off("stateChange", onConnectionStateChange);
+        clearTimeout(durationCapTimer);
+        releaseYoutubeSlot?.();
+        youtubeDlChild?.kill("SIGTERM");
+        // Stopped because we left voice -- don't advance the queue or rejoin.
+        if (disconnectedFromVoice) return;
         const results = await mongo.findQueueByGuildId(interaction.guildId);
         if (!results?.songs) return;
         if (!results.loop) {
@@ -737,6 +759,7 @@ module.exports = {
         this.playMusic(interaction);
       });
       player.on('error', error => {
+        connection.off("stateChange", onConnectionStateChange);
         clearTimeout(durationCapTimer);
         releaseYoutubeSlot?.();
         youtubeDlChild?.kill("SIGTERM");
