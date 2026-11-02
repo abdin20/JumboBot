@@ -56,6 +56,13 @@ var mongo = require("./mongodb.js");
 const http = require('http');
 const HEALTH_PORT = process.env.HEALTH_PORT || 3001;
 
+// Last line of defense: an unhandled rejection anywhere (e.g. a Discord interaction
+// reply that fails because the interaction already expired) would otherwise crash the
+// whole process and drop every active voice connection, not just the one request.
+process.on("unhandledRejection", (err) => {
+  console.error("Unhandled rejection (ignored to keep the bot alive):", err);
+});
+
 const token = process.env.BOT_TOKEN;
 // shane london, connor, aaron
 // const alwaysPlaySoundEffectIds=['545042126644445184','144260548245061632','146425358927790081']
