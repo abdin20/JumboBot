@@ -406,13 +406,13 @@ module.exports = {
     // types of query are youtube link, direct link, or search
     switch (queryType) {
       case "youtube":
-        url =
-          "https://www.youtube.com/watch?v=" + urlParser.parse(searchQuery).id;
+        const parsedYoutubeUrl = urlParser.parse(searchQuery);
+        url = "https://www.youtube.com/watch?v=" + parsedYoutubeUrl.id;
         result = await youtube.metadata(url);
         title = result.title;
         thumbnail = result.thumbnail_url;
         query = "youtube";
-        seek = urlParser.parse(searchQuery)?.params?.start ?? 0;
+        seek = parsedYoutubeUrl?.params?.start ?? 0;
         break;
 
       // direct link
@@ -641,11 +641,10 @@ module.exports = {
             connection.configureNetworking();
           }
         });
+        connection.on("error", (err) => {
+          console.log(err);
+        });
       }
-
-      connection.on("error", (err) => {
-        console.log(err);
-      });
 
       //get the song queue
       playingSong = results.songs.shift();
