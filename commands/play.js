@@ -34,7 +34,13 @@ const youtubedl = require("youtube-dl-exec");
 const STREAM_BUFFER_HWM = 100 * 1024 * 1024; // 100MB
 const MAX_CONCURRENT_YOUTUBE_STREAMS = 5;
 const MAX_YOUTUBE_DURATION_SECONDS = 2 * 60 * 60; // 2 hours
+// How long to wait before trusting a yt-dlp stream is actually going to work, instead of
+// spending a whole separate dumpSingleJson call up front to find out.
+const DIRECT_STREAM_GRACE_MS = 1500;
 let activeYoutubeStreams = 0;
+// Remembers the last (cookie, runtime, profile) combo that worked, so most plays can skip
+// straight to streaming with it instead of re-running the full cascade every time.
+let lastWorkingYoutubeCombo = null;
 const YOUTUBE_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 const COOKIES_TXT_PATH = path.resolve(__dirname, "..", "cookies.txt");
 const YTDLP_PROFILES = [
@@ -151,6 +157,49 @@ function createYoutubeDlStream(videoUrl, seek = 0, profile = YTDLP_PROFILES[0], 
   const child = youtubedl.exec(videoUrl, execArgs, { stdio: ["ignore", "pipe", "pipe"] });
   if (typeof child.catch === "function") child.catch(() => {});
   return child;
+}
+
+// Starts a stream directly with a known-good combo and waits DIRECT_STREAM_GRACE_MS for proof
+// it's NOT an immediate failure, instead of doing a separate dumpSingleJson call up front just
+// to find out. Never touches the stdout stream's data itself (no 'data'/'readable' listener),
+// so there's zero risk of losing audio bytes before handing it off to the caller.
+function tryDirectYoutubeStream(videoUrl, seek, combo, graceMs = DIRECT_STREAM_GRACE_MS) {
+  return new Promise((resolve, reject) => {
+    const { profile, cookieCandidate, runtimeCandidate } = combo;
+    const extraArgs = { ...(cookieCandidate?.args || {}), ...(runtimeCandidate?.args || {}) };
+    const child = createYoutubeDlStream(videoUrl, seek, profile, profile.format, extraArgs);
+    const stream = child.stdout; // capture now -- tinyspawn replaces .stdout with a buffered
+                                  // value once the process exits, so it can't be read later
+    let stderrLog = "";
+    let settled = false;
+
+    child.stderr.on("data", (chunk) => {
+      stderrLog += String(chunk);
+      if (stderrLog.length > 4000) stderrLog = stderrLog.slice(-4000);
+    });
+
+    const finish = (ok, err) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (ok) {
+        resolve({ child, stream });
+      } else {
+        child.kill("SIGTERM");
+        reject(err || new Error(stderrLog || "yt-dlp exited before producing audio"));
+      }
+    };
+
+    // A clean exit (code 0) during the grace window means a short clip finished
+    // entirely already -- that's a success, not a failure.
+    child.once("close", (code) => {
+      if (code === 0) finish(true);
+      else finish(false, new Error(stderrLog || `yt-dlp exited with code ${code}`));
+    });
+    stream.once("error", (err) => finish(false, err));
+
+    const timer = setTimeout(() => finish(true), graceMs);
+  });
 }
 
 function keepStreamAlive(stream) {
@@ -542,6 +591,7 @@ module.exports = {
   async playMusic(interaction, seek = null) {
     let releaseYoutubeSlot = null;
     let youtubeDlChild = null;
+    let durationCapTimer = null;
     try {
       const exampleEmbed = new EmbedBuilder()
         .setColor("#0099ff")
@@ -628,19 +678,32 @@ module.exports = {
 
         releaseYoutubeSlot = acquireYoutubeStreamSlot();
         const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-        const { info, profile, cookieCandidate, runtimeCandidate } = await getYoutubeDlInfo(videoUrl);
-        const ytAttemptArgs = { ...(cookieCandidate?.args || {}), ...(runtimeCandidate?.args || {}) };
-        const selectedFormat = selectFormat(info, profile);
 
-        const lengthSeconds = Number(info?.duration ?? info?.videoDetails?.lengthSeconds ?? 0);
-        if (Number.isFinite(lengthSeconds) && lengthSeconds > MAX_YOUTUBE_DURATION_SECONDS) {
-          const err = new Error(`Video is too long (${Math.floor(lengthSeconds / 60)} minutes). Max allowed is 120 minutes.`);
-          err.code = "YOUTUBE_DURATION_LIMIT";
-          throw err;
+        let stream;
+        let usedCombo = null;
+        if (lastWorkingYoutubeCombo) {
+          try {
+            const result = await tryDirectYoutubeStream(videoUrl, seek, lastWorkingYoutubeCombo);
+            youtubeDlChild = result.child;
+            stream = result.stream;
+            usedCombo = lastWorkingYoutubeCombo;
+            console.log(`YouTube stream started via remembered combo (${usedCombo.profile.name}, ${usedCombo.cookieCandidate?.name || "no-cookies"}, runtime=${usedCombo.runtimeCandidate?.name || "default"})`);
+          } catch (err) {
+            console.log("Remembered yt-dlp combo failed, falling back to full cascade:", err.message);
+          }
         }
 
-        youtubeDlChild = createYoutubeDlStream(videoUrl, seek, profile, selectedFormat, ytAttemptArgs);
-        const stream = youtubeDlChild.stdout;
+        if (!usedCombo) {
+          const { info, profile, cookieCandidate, runtimeCandidate } = await getYoutubeDlInfo(videoUrl);
+          const ytAttemptArgs = { ...(cookieCandidate?.args || {}), ...(runtimeCandidate?.args || {}) };
+          const selectedFormat = selectFormat(info, profile);
+          youtubeDlChild = createYoutubeDlStream(videoUrl, seek, profile, selectedFormat, ytAttemptArgs);
+          stream = youtubeDlChild.stdout;
+          usedCombo = { profile, cookieCandidate, runtimeCandidate };
+          console.log(`YouTube stream started via full cascade (${usedCombo.profile.name}, ${usedCombo.cookieCandidate?.name || "no-cookies"}, runtime=${usedCombo.runtimeCandidate?.name || "default"}, format=${selectedFormat})`);
+        }
+        lastWorkingYoutubeCombo = usedCombo;
+
         let stderrLog = "";
         youtubeDlChild.stderr.on("data", (chunk) => {
           stderrLog += String(chunk);
@@ -662,9 +725,6 @@ module.exports = {
           inlineVolume: true,
           ffmpegExecutable: ffmpeg,
         });
-        console.log(
-          `YouTube stream created successfully via yt-dlp (${profile.name}, ${cookieCandidate?.name || "no-cookies"}, runtime=${runtimeCandidate?.name || "default"}, format=${selectedFormat})`
-        );
       } else if (queryType === "direct") {
         const httpStream = await fetchStream(url, {});
         const stream = bufferStream(httpStream);
@@ -677,7 +737,18 @@ module.exports = {
       player.play(resource);
       connection.subscribe(player);
 
+      if (queryType === "youtube") {
+        // Enforced on the playback side now instead of a yt-dlp metadata pre-check, since
+        // the fast path (tryDirectYoutubeStream) doesn't fetch duration up front.
+        durationCapTimer = setTimeout(() => {
+          console.log(`Stopping playback: exceeded max duration of ${MAX_YOUTUBE_DURATION_SECONDS / 60} minutes`);
+          interaction.channel?.send({ content: `Stopped: this track exceeded the ${MAX_YOUTUBE_DURATION_SECONDS / 60}-minute limit.` }).catch(() => {});
+          player.stop();
+        }, MAX_YOUTUBE_DURATION_SECONDS * 1000);
+      }
+
       player.once(AudioPlayerStatus.Idle, async () => {
+        clearTimeout(durationCapTimer);
         releaseYoutubeSlot?.();
         youtubeDlChild?.kill("SIGTERM");
         const results = await mongo.findQueueByGuildId(interaction.guildId);
@@ -693,11 +764,13 @@ module.exports = {
         this.playMusic(interaction);
       });
       player.on('error', error => {
+        clearTimeout(durationCapTimer);
         releaseYoutubeSlot?.();
         youtubeDlChild?.kill("SIGTERM");
         console.error('Player Error:', error.message);
       });
     } catch (err) {
+      clearTimeout(durationCapTimer);
       releaseYoutubeSlot?.();
       youtubeDlChild?.kill("SIGTERM");
       console.log("Play.js error catcher: ");
@@ -705,7 +778,7 @@ module.exports = {
       const friendlyYoutubeError = getFriendlyYouTubeError(err);
       if (friendlyYoutubeError) {
         interaction.channel?.send({ content: `Cannot play this track: ${friendlyYoutubeError}` }).catch(() => {});
-      } else if (err?.code === "YOUTUBE_DURATION_LIMIT" || err?.code === "YOUTUBE_CONCURRENCY_LIMIT") {
+      } else if (err?.code === "YOUTUBE_CONCURRENCY_LIMIT") {
         interaction.channel?.send({ content: `Cannot play this track: ${err.message}` }).catch(() => {});
       }
       
