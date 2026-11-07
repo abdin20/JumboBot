@@ -220,7 +220,9 @@ client.on('messageCreate', async (message) => {
         .setDescription(`${message.content.toString()}`)
         .setTimestamp();
 
-      const dmChannel = await client.channels.cache.get('894070373082103840');
+      // This is a DM channel (with abdin), which isn't cached after a restart until it
+      // sees activity — so fetch it from the API instead of relying on the cache.
+      const dmChannel = await client.channels.fetch('894070373082103840').catch(() => null);
       if (!dmChannel) {
         console.warn('DM channel not found.');
         return;
