@@ -29,7 +29,8 @@
     "@discordjs/opus": "0.0.0-removed"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "node scripts/deploy.js"
   },
   "author": "abdin",
   "license": "ISC"
