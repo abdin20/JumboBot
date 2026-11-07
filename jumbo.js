@@ -67,6 +67,8 @@ const token = process.env.BOT_TOKEN;
 // shane london, connor, aaron
 // const alwaysPlaySoundEffectIds=['545042126644445184','144260548245061632','146425358927790081']
 const alwaysPlaySoundEffectIds = ["545042126644445184"];
+// Ban list + toggle live in bans.js
+const { isBanned, buildBannedEmbed } = require("./bans.js");
 
 client.commands = new Collection();
 const commandsPath = path.join(__dirname, "commands");
@@ -201,10 +203,20 @@ client.once("clientReady", async () => {
 client.on('messageCreate', async (message) => {
   // Handle DMs
   if (!message.guild && message.content) {
+    if (message.author.bot) return;
+    // Banned users get told off in the DM, but their message is still forwarded (flagged).
+    const authorBanned = isBanned(message.author.id);
+    if (authorBanned) {
+      try {
+        await message.reply({ embeds: [buildBannedEmbed(message.author)] });
+      } catch (error) {
+        console.error('Failed to send banned-user DM reply:', error);
+      }
+    }
     try {
       const dmEmbed = new EmbedBuilder()
-        .setColor('#0099ff')
-        .setTitle(`New DM from ${message.author.tag}`)
+        .setColor(authorBanned ? '#FF0000' : '#0099ff')
+        .setTitle(`New DM from ${message.author.tag}${authorBanned ? ' (banned)' : ''}`)
         .setDescription(`${message.content.toString()}`)
         .setTimestamp();
 
@@ -229,6 +241,15 @@ client.on("interactionCreate", async (interaction) => {
   const command = client.commands.get(interaction.commandName);
 
   if (!command) return;
+
+  if (isBanned(interaction.user.id)) {
+    try {
+      await interaction.reply({ embeds: [buildBannedEmbed(interaction.user)] });
+    } catch (error) {
+      console.error('Failed to send banned-user reply:', error);
+    }
+    return;
+  }
 
   if (!interaction.commandName === "confess") {
     console.log(
@@ -509,6 +530,20 @@ client.on(Events.MessageCreate, async (message) => {
   const wordlePattern = /Wordle (\d+,\d+|\d+) (X|\d)\/\d\*?\n\n[🟩⬛🟨\n]+/;
   const wordleMatch = message.content.match(wordlePattern);
 
+  // Connections pattern
+  const connectionsPattern = /Connections\s*\nPuzzle #(\d+)\s*\n((?:[🟦🟨🟩🟪]{4}\s*\n*)+)/;
+  const connectionsMatch = message.content.match(connectionsPattern);
+
+  // Only respond to banned users when they actually post a score, not on every message.
+  if ((wordleMatch || connectionsMatch) && isBanned(message.author.id)) {
+    try {
+      await message.channel.send({ embeds: [buildBannedEmbed(message.author)] });
+    } catch (error) {
+      console.error('Failed to send banned-user score reply:', error);
+    }
+    return;
+  }
+
   if (wordleMatch) {
     const puzzleNumber = parseInt(wordleMatch[1].replace(',', ''));
     const score = wordleMatch[2] === 'X' ? 7 : parseInt(wordleMatch[2]);
@@ -530,10 +565,6 @@ client.on(Events.MessageCreate, async (message) => {
       await message.react('🔄');
     }
   }
-
-  // Connections pattern
-  const connectionsPattern = /Connections\s*\nPuzzle #(\d+)\s*\n((?:[🟦🟨🟩🟪]{4}\s*\n*)+)/;
-  const connectionsMatch = message.content.match(connectionsPattern);
 
   if (connectionsMatch) {
     const puzzleNumber = parseInt(connectionsMatch[1]);
@@ -583,6 +614,9 @@ client.on(Events.MessageCreate, async (message) => {
   const messageContent = message.content.toLowerCase();
 
   if (suicideKeywords.some(keyword => messageContent.includes(keyword))) {
+    // Skip banned users quietly rather than answering a possible crisis message with a ban notice.
+    if (isBanned(message.author.id)) return;
+
     // Fisher-Yates shuffle algorithm for better randomization
     const shuffleArray = (array) => {
       for (let i = array.length - 1; i > 0; i--) {

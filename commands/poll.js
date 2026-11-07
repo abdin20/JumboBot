@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } = require("discord.js");
+const { isBanned, buildBannedEmbed } = require("../bans.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -121,6 +122,11 @@ module.exports = {
 
     collector.on('collect', async (i) => {
       if (!i.isButton()) return;
+
+      if (isBanned(i.user.id)) {
+        await i.reply({ embeds: [buildBannedEmbed(i.user)] });
+        return;
+      }
 
       if (i.customId === 'add_option') {
         const modal = new ModalBuilder()
