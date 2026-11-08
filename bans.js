@@ -1,7 +1,7 @@
 const { EmbedBuilder } = require("discord.js");
 
 // Flip to false to let everyone use Jumbo again without clearing the list.
-const BANS_ENABLED = true;
+const BANS_ENABLED = false;
 // User IDs blocked from interacting with Jumbo while BANS_ENABLED is true.
 const bannedUserIds = [
   "310442661343526915", // lagdad
